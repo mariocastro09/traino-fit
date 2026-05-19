@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
 import { Link } from "react-router";
@@ -16,85 +17,82 @@ export function meta() {
 }
 
 // ──────────────────────────────────────────────
-// DATA
+// DATA (FALLBACK DEFAULTS)
 // ──────────────────────────────────────────────
 
-const boxPlans = [
+const defaultBoxPlans = [
   {
-    id: "box-starter",
+    id: 1,
     name: "STARTER",
+    moduleName: "TRAINO BOX",
     hook: "Crea el Hábito",
     price: "$29.990",
     description: "2 Clases / semana + Coaching",
-    features: [
-      "2 clases por semana",
-      "Coaching certificado incluido",
-      "Escalable a tu nivel",
-      "Comunidad TrainoBox",
-    ],
+    features: "2 clases por semana,Coaching certificado incluido,Escalable a tu nivel,Comunidad TrainoBox",
+    featured: false,
     cta: "Empieza aquí",
   },
   {
-    id: "box-progress",
+    id: 2,
     name: "PROGRESS",
+    moduleName: "TRAINO BOX",
     hook: "El Punto Dulce",
     price: "$39.990",
     description: "3 Clases / semana + Seguimiento",
-    features: [
-      "3 clases por semana",
-      "Coaching certificado incluido",
-      "Seguimiento de rendimiento",
-      "Acceso a comunidad activa",
-    ],
+    features: "3 clases por semana,Coaching certificado incluido,Seguimiento de rendimiento,Acceso a comunidad activa",
     featured: true,
     cta: "Sube de nivel",
   },
   {
-    id: "box-rx",
+    id: 3,
     name: "RX",
+    moduleName: "TRAINO BOX",
     hook: "Maestría Total",
     price: "$54.990",
     description: "Clases Ilimitadas + Open Box",
-    features: [
-      "Clases ilimitadas",
-      "Coaching certificado incluido",
-      "Open Box Access — incluido",
-      "Rendimiento sin restricciones",
-    ],
+    features: "Clases ilimitadas,Coaching certificado incluido,Open Box Access — incluido,Rendimiento sin restricciones",
+    featured: false,
     cta: "Rendimiento Total",
   },
 ];
 
-const gymPlans = [
+const defaultGymPlans = [
   {
-    id: "gym-flex",
+    id: 4,
     name: "FLEX",
+    moduleName: "TRAINO GYM",
     hook: "Ahorro Inteligente",
     price: "$29.990",
     description: "Lun–Vie 08:00–16:00",
-    features: [
-      "Acceso completo Off-Peak",
-      "Lunes a Viernes, mañanas",
-      "Equipamiento de alta gama",
-      "Ideal para horario flexible",
-    ],
+    features: "Acceso completo Off-Peak,Lunes a Viernes, mañanas,Equipamiento de alta gama,Ideal para horario flexible",
+    featured: false,
     cta: "Empieza aquí",
   },
   {
-    id: "gym-libre",
+    id: 5,
     name: "LIBRE",
+    moduleName: "TRAINO GYM",
     hook: "Sin Límites",
     price: "$39.990",
     description: "Acceso Total — Todos los horarios",
-    features: [
-      "Acceso completo todos los días",
-      "Fines de semana incluidos",
-      "Equipamiento premium",
-      "Entrena bajo tus propias reglas",
-    ],
+    features: "Acceso completo todos los días,Fines de semana incluidos,Equipamiento premium,Entrena bajo tus propias reglas",
     featured: true,
     cta: "Sube de nivel",
   },
+];
+
+const defaultHybridPlans = [
+  {
+    id: 6,
+    name: "ATHLETE",
+    moduleName: "TRAINO HYBRID",
+    hook: "La Máquina Definitiva",
+    price: "$69.990",
+    description: "Gym ilimitado + CrossFit ilimitado + Open Box",
+    features: "Gym Ilimitado — todos los horarios,CrossFit Ilimitado — clases diarias,Open Box Access — sin cita previa,Coaching certificado en cada sesión,Equipamiento de alta gama,Sin restricciones de horario,La combinación definitiva: Fuerza + Agilidad",
+    featured: true,
+    cta: "QUIERO SER ATHLETE",
+  }
 ];
 
 // ──────────────────────────────────────────────
@@ -106,10 +104,14 @@ function PlanCard({
   accentColor,
   groupLabel,
 }: {
-  plan: (typeof boxPlans)[0];
+  plan: any;
   accentColor: string;
   groupLabel: string;
 }) {
+  const featuresList = typeof plan.features === "string"
+    ? plan.features.split(",").filter(Boolean)
+    : (Array.isArray(plan.features) ? plan.features : []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -147,34 +149,25 @@ function PlanCard({
         >
           {plan.name}
         </h3>
-        <p
-          className="text-xs font-bold uppercase tracking-wider mb-5"
-          style={{ color: accentColor }}
-        >
+        <p className="text-gray-400 text-xs uppercase tracking-wider mb-6">
           {plan.hook}
         </p>
 
         {/* Price */}
-        <div className="mb-5">
+        <div className="mb-6">
           <span className="text-4xl font-black text-white">{plan.price}</span>
-          <span className="text-gray-500 text-sm ml-2">/mes</span>
+          <span className="text-gray-500 text-xs ml-2">/mes</span>
         </div>
 
         {/* Description */}
-        <p className="text-gray-400 text-sm mb-6 border-b border-white/5 pb-6">
-          {plan.description}
-        </p>
+        <p className="text-gray-300 text-sm mb-6">{plan.description}</p>
 
         {/* Features */}
-        <ul className="space-y-3 flex-1 mb-8">
-          {plan.features.map((f, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <Check
-                size={14}
-                className="mt-0.5 flex-shrink-0"
-                style={{ color: accentColor }}
-              />
-              <span className="text-gray-300 text-sm">{f}</span>
+        <ul className="space-y-3 mb-8 flex-1">
+          {featuresList.map((feature: string, idx: number) => (
+            <li key={idx} className="flex items-start gap-3">
+              <Check size={16} className="text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-gray-300 text-sm">{feature}</span>
             </li>
           ))}
         </ul>
@@ -182,20 +175,11 @@ function PlanCard({
         {/* CTA */}
         <Link
           to="/contacto"
-          id={`plan-${plan.id}-cta`}
-          className="block w-full text-center py-3 px-6 font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105"
-          style={
+          className={`w-full py-3 text-center font-black text-xs uppercase tracking-widest transition-all duration-300 ${
             plan.featured
-              ? {
-                  background: accentColor,
-                  color: "#0a0a0a",
-                  boxShadow: `0 0 25px -8px ${accentColor}`,
-                }
-              : {
-                  border: `1.5px solid ${accentColor}40`,
-                  color: accentColor,
-                }
-          }
+              ? "bg-primary text-black hover:scale-105"
+              : "bg-zinc-800 text-white hover:bg-zinc-700"
+          }`}
         >
           {plan.cta} →
         </Link>
@@ -245,6 +229,35 @@ function SectionHeader({
 // ──────────────────────────────────────────────
 
 export default function Precios() {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/plans")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPlans(data);
+        } else {
+          setPlans([...defaultBoxPlans, ...defaultGymPlans, ...defaultHybridPlans]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading plans, using default:", err);
+        setPlans([...defaultBoxPlans, ...defaultGymPlans, ...defaultHybridPlans]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const boxPlans = plans.filter((p: any) => p.moduleName === "TRAINO BOX");
+  const gymPlans = plans.filter((p: any) => p.moduleName === "TRAINO GYM");
+  const hybridPlans = plans.filter((p: any) => p.moduleName === "TRAINO HYBRID");
+  
+  const athletePlan = hybridPlans[0] || defaultHybridPlans[0];
+  const athleteFeatures = typeof athletePlan.features === "string"
+    ? athletePlan.features.split(",").filter(Boolean)
+    : (Array.isArray(athletePlan.features) ? athletePlan.features : []);
+
   return (
     <Layout>
       {/* Page Header — Video Background */}
@@ -300,16 +313,24 @@ export default function Precios() {
             subtitle="Coaching, comunidad y WODs de alto rendimiento. Para quienes buscan superarse en equipo."
             color="#ff6b35"
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {boxPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                accentColor="#ff6b35"
-                groupLabel="TRAINO BOX"
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="h-96 bg-zinc-900/50 animate-pulse border border-white/5" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {boxPlans.map((plan: any) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  accentColor="#ff6b35"
+                  groupLabel="TRAINO BOX"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -332,16 +353,24 @@ export default function Precios() {
             subtitle="Autonomía total, fuerza bruta y equipamiento de última generación. Entrena bajo tus propias reglas."
             color="#d4a017"
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
-            {gymPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                accentColor="#d4a017"
-                groupLabel="TRAINO GYM"
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+              {[1, 2].map((n) => (
+                <div key={n} className="h-96 bg-zinc-900/50 animate-pulse border border-white/5" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+              {gymPlans.map((plan: any) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  accentColor="#d4a017"
+                  groupLabel="TRAINO GYM"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -365,116 +394,112 @@ export default function Precios() {
             color="#d4a017"
           />
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            id="plan-athlete"
-            className="relative border-2 border-primary bg-gradient-to-br from-primary/10 via-zinc-950 to-zinc-900 overflow-hidden shadow-[0_0_80px_-20px_rgba(212,160,23,0.5)]"
-          >
-            {/* Top accent bar */}
-            <div className="bg-gradient-to-r from-primary via-primary-300 to-primary py-3 text-center">
-              <span className="text-sm font-black tracking-[0.4em] uppercase text-dark">
-                ⭐ THE RECOMMENDED CHOICE — RENDIMIENTO TOTAL ⭐
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-              {/* Left — Info */}
-              <div className="p-10 lg:p-14 border-b lg:border-b-0 lg:border-r border-white/5">
-                <span className="text-xs font-black tracking-[0.3em] uppercase text-primary mb-4 block">
-                  TRAINO HYBRID — MÓDULO 3
+          {loading ? (
+            <div className="h-[400px] bg-zinc-900/50 animate-pulse border border-primary/20" />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              id="plan-athlete"
+              className="relative border-2 border-primary bg-gradient-to-br from-primary/10 via-zinc-950 to-zinc-900 overflow-hidden shadow-[0_0_80px_-20px_rgba(212,160,23,0.5)]"
+            >
+              {/* Top accent bar */}
+              <div className="bg-gradient-to-r from-primary via-primary-300 to-primary py-3 text-center">
+                <span className="text-sm font-black tracking-[0.4em] uppercase text-dark">
+                  ⭐ THE RECOMMENDED CHOICE — RENDIMIENTO TOTAL ⭐
                 </span>
-                <h3
-                  className="text-6xl md:text-7xl font-black uppercase text-white leading-none mb-2"
-                  style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}
-                >
-                  ATHLETE
-                </h3>
-                <p className="text-primary font-bold uppercase tracking-wider text-sm mb-8">
-                  La Máquina Definitiva
-                </p>
+              </div>
 
-                <div className="mb-8">
-                  <span className="text-6xl font-black text-white">
-                    $69.990
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                {/* Left — Info */}
+                <div className="p-10 lg:p-14 border-b lg:border-b-0 lg:border-r border-white/5">
+                  <span className="text-xs font-black tracking-[0.3em] uppercase text-primary mb-4 block">
+                    TRAINO HYBRID — MÓDULO 3
                   </span>
-                  <span className="text-gray-400 text-base ml-3">/mes</span>
-                </div>
-
-                <p className="text-gray-300 text-lg leading-relaxed mb-8">
-                  Gym ilimitado + CrossFit ilimitado + Open Box.{" "}
-                  <span className="text-white font-semibold">
-                    Sin restricciones. Sin excusas. Solo resultados.
-                  </span>
-                </p>
-
-                <Link
-                  to="/contacto"
-                  id="plan-athlete-cta"
-                  className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(212,160,23,0.6)]"
-                >
-                  QUIERO SER ATHLETE
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <h3
+                    className="text-6xl md:text-7xl font-black uppercase text-white leading-none mb-2"
+                    style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M17 8l4 4m0 0l-4 4m4-4H3"
-                    />
-                  </svg>
-                </Link>
-              </div>
-
-              {/* Right — Features */}
-              <div className="p-10 lg:p-14">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-primary mb-8">
-                  TODO INCLUIDO
-                </h4>
-                <ul className="space-y-5">
-                  {[
-                    "Gym Ilimitado — todos los horarios",
-                    "CrossFit Ilimitado — clases diarias",
-                    "Open Box Access — sin cita previa",
-                    "Coaching certificado en cada sesión",
-                    "Equipamiento de alta gama",
-                    "Sin restricciones de horario",
-                    "La combinación definitiva: Fuerza + Agilidad",
-                  ].map((f, i) => (
-                    <li key={i} className="flex items-start gap-4">
-                      <div className="w-5 h-5 rounded-none bg-primary/20 border border-primary/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check size={11} className="text-primary" />
-                      </div>
-                      <span className="text-gray-200 text-base">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Psychology note */}
-                <div className="mt-10 p-4 bg-primary/5 border border-primary/20">
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    💡{" "}
-                    <span className="text-primary font-semibold">
-                      ¿Por qué ATHLETE?
-                    </span>{" "}
-                    En vez de pagar Gym ($39.990) + Box ($54.990) por separado,
-                    el plan ATHLETE te da todo por{" "}
-                    <span className="text-white font-bold">$69.990</span>. La
-                    matemática habla sola.
+                    {athletePlan.name}
+                  </h3>
+                  <p className="text-primary font-bold uppercase tracking-wider text-sm mb-8">
+                    {athletePlan.hook}
                   </p>
+
+                  <div className="mb-8">
+                    <span className="text-6xl font-black text-white">
+                      {athletePlan.price}
+                    </span>
+                    <span className="text-gray-400 text-base ml-3">/mes</span>
+                  </div>
+
+                  <p className="text-gray-300 text-lg leading-relaxed mb-8">
+                    {athletePlan.description}.{" "}
+                    <span className="text-white font-semibold">
+                      Sin restricciones. Sin excusas. Solo resultados.
+                    </span>
+                  </p>
+
+                  <Link
+                    to="/contacto"
+                    id="plan-athlete-cta"
+                    className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(212,160,23,0.6)]"
+                  >
+                    {athletePlan.cta}
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+
+                {/* Right — Features */}
+                <div className="p-10 lg:p-14">
+                  <h4 className="text-xs font-black tracking-[0.3em] uppercase text-primary mb-8">
+                    TODO INCLUIDO
+                  </h4>
+                  <ul className="space-y-5">
+                    {athleteFeatures.map((f: string, i: number) => (
+                      <li key={i} className="flex items-start gap-4">
+                        <div className="w-5 h-5 rounded-none bg-primary/20 border border-primary/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check size={11} className="text-primary" />
+                        </div>
+                        <span className="text-gray-200 text-base">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Psychology note */}
+                  <div className="mt-10 p-4 bg-primary/5 border border-primary/20">
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                      💡{" "}
+                      <span className="text-primary font-semibold">
+                        ¿Por qué {athletePlan.name}?
+                      </span>{" "}
+                      En vez de pagar Gym ($39.990) + Box ($54.990) por separado,
+                      el plan {athletePlan.name} te da todo por{" "}
+                      <span className="text-white font-bold">{athletePlan.price}</span>. La
+                      matemática habla sola.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Corner glow */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
-          </motion.div>
+              {/* Corner glow */}
+              <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+            </motion.div>
+          )}
         </div>
 
         {/* FAQ Note */}

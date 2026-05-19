@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { setCookie, getCookie } from 'hono/cookie';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import * as schema from './db/schema';
 
@@ -42,7 +42,7 @@ function getGoogleAuth(c: any) {
 // Middleware to check if user is admin
 async function requireAdmin(c: any, next: any) {
   const sessionId = c.req.header('Authorization')?.replace('Bearer ', '');
-  
+
   if (!sessionId) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -76,7 +76,7 @@ app.get('/api/auth/login', async (c) => {
   const google = getGoogleAuth(c);
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
-  
+
   const url = await google.createAuthorizationURL(state, codeVerifier, ['profile', 'email']);
 
   setCookie(c, 'google_oauth_state', state, {
@@ -111,18 +111,18 @@ app.get('/api/auth/callback', async (c) => {
 
   try {
     const google = getGoogleAuth(c);
-    
+
     console.log('Validating auth code...');
     console.log('Code verifier exists:', !!codeVerifier);
     console.log('State matches:', state === storedState);
-    
+
     const tokens = await google.validateAuthorizationCode(code, codeVerifier);
-    
+
     console.log('Successfully validated auth code');
     console.log('Tokens object keys:', Object.keys(tokens));
     console.log('Access token exists:', !!tokens.accessToken);
     console.log('Access token type:', typeof tokens.accessToken);
-    
+
     // Get user info from Google
     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: {
@@ -130,9 +130,9 @@ app.get('/api/auth/callback', async (c) => {
       },
     });
 
-    const user = await response.json() as { id: string; email: string; [key: string]: any };
+    const user = await response.json() as { id: string; email: string;[key: string]: any };
     const email = user.email;
-    
+
     console.log('User email:', email);
 
     // Check if email is in admin whitelist
@@ -170,7 +170,7 @@ app.get('/api/auth/callback', async (c) => {
 
 app.post('/api/auth/logout', async (c) => {
   const sessionId = c.req.header('Authorization')?.replace('Bearer ', '');
-  
+
   if (sessionId) {
     const db = drizzle(c.env.DB, { schema });
     await db.delete(schema.sessions).where(eq(schema.sessions.id, sessionId));
@@ -182,7 +182,7 @@ app.post('/api/auth/logout', async (c) => {
 // Check session
 app.get('/api/auth/session', async (c) => {
   const sessionId = c.req.query('session');
-  
+
   if (!sessionId) {
     return c.json({ authenticated: false }, 401);
   }
@@ -196,8 +196,8 @@ app.get('/api/auth/session', async (c) => {
     return c.json({ authenticated: false }, 401);
   }
 
-  return c.json({ 
-    authenticated: true, 
+  return c.json({
+    authenticated: true,
     email: session.email,
     expiresAt: session.expiresAt,
   });
@@ -344,6 +344,81 @@ app.delete('/api/admin/class-types/:id', requireAdmin, async (c) => {
   return c.json({ success: true });
 });
 
+// ==================== PLANS CMS API ====================
+
+// Public API - Get active plans
+app.get('/api/plans', async (c) => {
+  const db = drizzle(c.env.DB, { schema });
+  const plansList = await db.query.plans.findMany({
+    where: eq(schema.plans.isActive, true),
+    orderBy: [asc(schema.plans.orderIndex)],
+  });
+
+  return c.json(plansList);
+});
+
+// Admin API - Get all plans
+app.get('/api/admin/plans', requireAdmin, async (c) => {
+  const db = drizzle(c.env.DB, { schema });
+  const plansList = await db.query.plans.findMany({
+    orderBy: [asc(schema.plans.orderIndex)],
+  });
+
+  return c.json(plansList);
+});
+
+// Admin API - Create plan
+app.post('/api/admin/plans', requireAdmin, async (c) => {
+  const body = await c.req.json();
+  const db = drizzle(c.env.DB, { schema });
+
+  const newPlan = await db.insert(schema.plans).values({
+    name: body.name,
+    moduleName: body.moduleName,
+    hook: body.hook,
+    price: body.price,
+    description: body.description,
+    features: body.features,
+    featured: body.featured ?? false,
+    cta: body.cta,
+    orderIndex: body.orderIndex ?? 0,
+    isActive: body.isActive ?? true,
+  }).returning();
+
+  return c.json(newPlan[0], 201);
+});
+
+// Admin API - Update plan
+app.put('/api/admin/plans/:id', requireAdmin, async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const { id: _id, createdAt, updatedAt, ...updateData } = await c.req.json();
+  const db = drizzle(c.env.DB, { schema });
+
+  const updated = await db.update(schema.plans)
+    .set({
+      ...updateData,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.plans.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return c.json({ error: 'Plan not found' }, 404);
+  }
+
+  return c.json(updated[0]);
+});
+
+// Admin API - Delete plan
+app.delete('/api/admin/plans/:id', requireAdmin, async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const db = drizzle(c.env.DB, { schema });
+
+  await db.delete(schema.plans).where(eq(schema.plans.id, id));
+
+  return c.json({ success: true });
+});
+
 // ==================== STUDENTS API ====================
 
 // Admin API - Get all students
@@ -387,7 +462,7 @@ app.post('/api/admin/students', requireAdmin, async (c) => {
 
   // Validate required fields
   if (!body.firstName || !body.lastName || !body.email || !body.phone) {
-    return c.json({ 
+    return c.json({
       error: 'Missing required fields',
       required: ['firstName', 'lastName', 'email', 'phone']
     }, 400);
@@ -485,8 +560,8 @@ app.post('/api/leads', async (c) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "TrainoFit Web <onboarding@resend.dev>",
-        to: "trainocf@gmail.com",
+        from: "TrainoFit Web <no-responder@trainofit.cl>",
+        to: "mapplerak@gmail.com",
         subject: subject,
         html: htmlContent,
       }),

@@ -18,6 +18,7 @@ database_id = "e59c04c0-05c2-4343-891b-ea543d50d480"
 # GOOGLE_REDIRECT_URI
 # SESSION_SECRET
 # ADMIN_EMAILS (comma-separated whitelist)
+# RESEND_API_KEY
 
 [vars]
 NODE_ENV = "production"

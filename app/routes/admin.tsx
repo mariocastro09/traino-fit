@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router";
 import { 
-  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays
+  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign
 } from "lucide-react";
 import { 
   DndContext, 
@@ -24,6 +24,7 @@ import { ScheduleListView } from "~/components/admin/schedule-list-view";
 import { EditScheduleDialog } from "~/components/admin/edit-schedule-dialog";
 import { ClassTypesManager } from "~/components/admin/class-types-manager";
 import { StudentsManager } from "~/components/admin/students-manager";
+import { PlansManager } from "~/components/admin/plans-manager";
 
 export function meta() {
   return [
@@ -79,7 +80,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   
   // Active section management
-  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students'>('schedules');
+  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans'>('schedules');
   
   // Schedules state
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
@@ -95,6 +96,9 @@ export default function Admin() {
   
   // Students state  
   const [students, setStudents] = useState<Student[]>([]);
+
+  // Plans state
+  const [plans, setPlans] = useState<any[]>([]);
 
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const timeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '10:30', '12:00', '17:00', '18:00', '19:00', '20:00'];
@@ -171,6 +175,7 @@ export default function Admin() {
         loadSchedules(sessionToken);
         loadClassTypes(sessionToken);
         loadStudents(sessionToken);
+        loadPlans(sessionToken);
       } else {
         setAuthenticated(false);
         localStorage.removeItem('admin_session');
@@ -515,6 +520,84 @@ export default function Admin() {
     }
   };
 
+  // ==================== PLANS CRUD ====================
+  const loadPlans = async (sessionToken: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/admin/plans`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPlans(data as any[]);
+      }
+    } catch (error) {
+      console.error('Failed to load plans:', error);
+    }
+  };
+
+  const handleAddPlan = async (plan: any) => {
+    if (!session) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/plans`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(plan),
+      });
+
+      if (response.ok) {
+        await loadPlans(session);
+      }
+    } catch (error) {
+      console.error('Failed to add plan:', error);
+    }
+  };
+
+  const handleUpdatePlan = async (id: number, plan: any) => {
+    if (!session) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/plans/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(plan),
+      });
+
+      if (response.ok) {
+        await loadPlans(session);
+      }
+    } catch (error) {
+      console.error('Failed to update plan:', error);
+    }
+  };
+
+  const handleDeletePlan = async (id: number) => {
+    if (!session) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/plans/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session}`,
+        },
+      });
+
+      if (response.ok) {
+        await loadPlans(session);
+      }
+    } catch (error) {
+      console.error('Failed to delete plan:', error);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -589,7 +672,7 @@ export default function Admin() {
               <BookOpen size={18} />
               Tipos de Clases
             </button>
-            <button
+             <button
               onClick={() => setActiveSection('students')}
               className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
                 activeSection === 'students'
@@ -599,6 +682,17 @@ export default function Admin() {
             >
               <Users size={18} />
               Alumnos
+            </button>
+            <button
+              onClick={() => setActiveSection('plans')}
+              className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+                activeSection === 'plans'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-light/70 hover:text-light'
+              }`}
+            >
+              <DollarSign size={18} />
+              Planes
             </button>
           </div>
         </div>
@@ -815,6 +909,16 @@ export default function Admin() {
             onAdd={handleAddStudent}
             onUpdate={handleUpdateStudent}
             onDelete={handleDeleteStudent}
+          />
+        )}
+
+        {/* Plans Section */}
+        {activeSection === 'plans' && (
+          <PlansManager
+            plans={plans}
+            onAdd={handleAddPlan}
+            onUpdate={handleUpdatePlan}
+            onDelete={handleDeletePlan}
           />
         )}
       </Section>

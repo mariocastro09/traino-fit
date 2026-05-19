@@ -55,6 +55,23 @@ export const students = sqliteTable('students', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+// Plans table
+export const plans = sqliteTable('plans', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(), // 'STARTER', 'PROGRESS', 'RX', 'ATHLETE'
+  moduleName: text('module_name').notNull(), // 'TRAINO BOX', 'TRAINO GYM', 'TRAINO HYBRID'
+  hook: text('hook'), // 'Crea el Hábito', 'El Punto Dulce'
+  price: text('price').notNull(), // '$29.990', '$39.990'
+  description: text('description'), // '2 Clases / semana + Coaching'
+  features: text('features').notNull(), // Comma-separated or JSON string of features
+  featured: integer('featured', { mode: 'boolean' }).default(false),
+  cta: text('cta').notNull(), // 'Empieza aquí', 'Sube de nivel'
+  orderIndex: integer('order_index').default(0), // for custom sorting
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 // Sessions table for authentication
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
@@ -74,3 +91,5 @@ export type Student = typeof students.$inferSelect;
 export type NewStudent = typeof students.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+export type Plan = typeof plans.$inferSelect;
+export type NewPlan = typeof plans.$inferInsert;
