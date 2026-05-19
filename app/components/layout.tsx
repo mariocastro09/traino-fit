@@ -299,15 +299,24 @@ function Footer() {
 
         <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-600 text-xs">
           <p>&copy; 2025 TrainoFit.cl — Todos los derechos reservados.</p>
-          <p>
-            Hecho con ❤️ por{" "}
-            <a
-              href="https://www.github.com/mariocastro09"
-              className="text-primary hover:underline"
+          <div className="flex items-center gap-4">
+            <Link
+              to="/admin"
+              className="text-gray-600/30 hover:text-primary transition-colors duration-300 text-[11px]"
+              title="Panel de Administración"
             >
-              Mario Castro
-            </a>
-          </p>
+              Admin
+            </Link>
+            <p>
+              Hecho con ❤️ por{" "}
+              <a
+                href="https://www.github.com/mariocastro09"
+                className="text-primary hover:underline"
+              >
+                Mario Castro
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

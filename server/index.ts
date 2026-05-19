@@ -561,7 +561,7 @@ app.post('/api/leads', async (c) => {
       },
       body: JSON.stringify({
         from: "TrainoFit Web <no-responder@trainofit.cl>",
-        to: "mapplerak@gmail.com",
+        to: "trainocf@gmail.com",
         subject: subject,
         html: htmlContent,
       }),
