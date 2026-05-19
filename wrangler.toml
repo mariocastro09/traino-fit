@@ -1,0 +1,30 @@
+name = "trainofit"
+main = "worker.ts"
+compatibility_date = "2024-11-19"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets configuration
+assets = { directory = "./build/client/" }
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "trainofit-db"
+database_id = "e59c04c0-05c2-4343-891b-ea543d50d480"
+
+# Environment Variables (set these in Cloudflare dashboard or .dev.vars)
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# GOOGLE_REDIRECT_URI
+# SESSION_SECRET
+# ADMIN_EMAILS (comma-separated whitelist)
+
+[vars]
+NODE_ENV = "production"
+
+# For local development
+[env.dev]
+vars = { NODE_ENV = "development" }
+
+[observability.logs]
+enabled = true
