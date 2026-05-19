@@ -4,11 +4,11 @@ import { Section } from "~/components/ui/section";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router";
-import { 
-  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign
+import {
+  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings
 } from "lucide-react";
-import { 
-  DndContext, 
+import {
+  DndContext,
   DragOverlay,
   closestCenter,
   PointerSensor,
@@ -25,6 +25,7 @@ import { EditScheduleDialog } from "~/components/admin/edit-schedule-dialog";
 import { ClassTypesManager } from "~/components/admin/class-types-manager";
 import { StudentsManager } from "~/components/admin/students-manager";
 import { PlansManager } from "~/components/admin/plans-manager";
+import { SettingsManager } from "~/components/admin/settings-manager";
 
 export function meta() {
   return [
@@ -78,10 +79,10 @@ export default function Admin() {
   const [session, setSession] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+
   // Active section management
-  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans'>('schedules');
-  
+  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans' | 'settings'>('schedules');
+
   // Schedules state
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -93,7 +94,7 @@ export default function Admin() {
 
   // Class types state
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
-  
+
   // Students state  
   const [students, setStudents] = useState<Student[]>([]);
 
@@ -112,6 +113,11 @@ export default function Admin() {
   );
 
   useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'classTypes' || tabParam === 'schedules' || tabParam === 'students' || tabParam === 'plans') {
+      setActiveSection(tabParam);
+    }
+
     const sessionToken = searchParams.get('session');
     if (sessionToken) {
       setSession(sessionToken);
@@ -138,7 +144,7 @@ export default function Admin() {
         setViewMode('list');
       }
     };
-    
+
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -148,7 +154,7 @@ export default function Admin() {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
-        switch(e.key) {
+        switch (e.key) {
           case 'n':
             e.preventDefault();
             setShowAddForm(true);
@@ -160,7 +166,7 @@ export default function Admin() {
         setEditingId(null);
       }
     };
-    
+
     if (authenticated) {
       window.addEventListener('keydown', handleKeyPress);
       return () => window.removeEventListener('keydown', handleKeyPress);
@@ -342,7 +348,7 @@ export default function Admin() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over || !session) {
       setActiveId(null);
       return;
@@ -353,7 +359,7 @@ export default function Admin() {
 
     // Parse the droppable id (format: "day-time")
     const [day, time] = (over.id as string).split('-');
-    
+
     if (day && time && (activeSchedule.dayOfWeek !== day || activeSchedule.time !== time)) {
       try {
         const response = await fetch(`${API_URL}/api/admin/schedule/${active.id}`, {
@@ -617,7 +623,7 @@ export default function Admin() {
         <Section className="min-h-screen flex items-center justify-center relative overflow-hidden">
           {/* Background Radial Glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <Card className="max-w-md w-full bg-zinc-950/80 border border-white/10 backdrop-blur-xl relative z-10 shadow-2xl shadow-black/80">
             <CardHeader className="text-center pt-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-600 p-0.5 shadow-lg shadow-primary/20 mx-auto mb-6 flex items-center justify-center">
@@ -631,9 +637,9 @@ export default function Admin() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pb-8">
-              <Button 
-                onClick={handleLogin} 
-                className="w-full bg-primary hover:bg-primary/90 text-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-bold py-6 text-base shadow-lg shadow-primary/10"
+              <Button
+                onClick={handleLogin}
+                className="w-full bg-primary hover:bg-primary/90 text-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-bold py-6 text-base shadow-lg shadow-primary/10"
               >
                 Iniciar Sesión con Google
               </Button>
@@ -656,9 +662,9 @@ export default function Admin() {
               </h1>
               <p className="text-xs text-light/40 mt-1 uppercase font-bold tracking-widest">TrainoFit Backoffice</p>
             </div>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
+            <Button
+              onClick={handleLogout}
+              variant="outline"
               size="sm"
               className="border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all duration-300 font-bold"
             >
@@ -669,32 +675,79 @@ export default function Admin() {
 
           {/* Dashboard Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
-              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Clases Activas</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">{schedules.filter(s => s.isActive).length}</span>
-                <span className="text-[10px] text-primary font-bold">/ {schedules.length} total</span>
+            {/* Card 1: Horarios / Clases Activas */}
+            <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-primary/20 hover:shadow-[0_0_20px_rgba(212,160,23,0.05)] overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-transparent" />
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Clases Activas</span>
+                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                  <CalendarDays size={16} />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-4">
+                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  {schedules.filter(s => s.isActive).length}
+                </span>
+                <span className="text-[10px] text-primary/70 font-bold">
+                  / {schedules.length} total
+                </span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
-              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Tipos de Clases</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">{classTypes.filter(c => c.isActive).length}</span>
-                <span className="text-[10px] text-yellow-500 font-bold">/ {classTypes.length} total</span>
+
+            {/* Card 2: Tipos de Clases */}
+            <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-yellow-500/20 hover:shadow-[0_0_20px_rgba(234,179,8,0.05)] overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-yellow-500 to-transparent" />
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Tipos de Clases</span>
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 group-hover:scale-110 transition-transform duration-300">
+                  <BookOpen size={16} />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-4">
+                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  {classTypes.filter(c => c.isActive).length}
+                </span>
+                <span className="text-[10px] text-yellow-500/70 font-bold">
+                  / {classTypes.length} total
+                </span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
-              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Alumnos Activos</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">{students.filter(s => s.isActive).length}</span>
-                <span className="text-[10px] text-green-400 font-bold">/ {students.length} total</span>
+
+            {/* Card 3: Alumnos Activos */}
+            <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.05)] overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-transparent" />
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Alumnos Activos</span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                  <Users size={16} />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-4">
+                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  {students.filter(s => s.isActive).length}
+                </span>
+                <span className="text-[10px] text-emerald-400/70 font-bold">
+                  / {students.length} total
+                </span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
-              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Planes Online</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">{plans.filter(p => p.isActive).length}</span>
-                <span className="text-[10px] text-purple-400 font-bold">/ {plans.length} total</span>
+
+            {/* Card 4: Planes Online */}
+            <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-purple-500/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.05)] overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500 to-transparent" />
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Planes Online</span>
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                  <DollarSign size={16} />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-4">
+                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  {plans.filter(p => p.isActive).length}
+                </span>
+                <span className="text-[10px] text-purple-400/70 font-bold">
+                  / {plans.length} total
+                </span>
               </div>
             </div>
           </div>
@@ -703,47 +756,53 @@ export default function Admin() {
           <div className="flex p-1 bg-zinc-900/80 border border-white/5 rounded-xl gap-1 overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveSection('schedules')}
-              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
-                activeSection === 'schedules'
-                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
-                  : 'text-light/60 hover:text-light hover:bg-white/5'
-              }`}
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeSection === 'schedules'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.01]'
+                : 'text-light/60 hover:text-light hover:bg-white/5'
+                }`}
             >
               <CalendarDays size={16} />
               Horarios
             </button>
             <button
               onClick={() => setActiveSection('classTypes')}
-              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
-                activeSection === 'classTypes'
-                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
-                  : 'text-light/60 hover:text-light hover:bg-white/5'
-              }`}
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeSection === 'classTypes'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.01]'
+                : 'text-light/60 hover:text-light hover:bg-white/5'
+                }`}
             >
               <BookOpen size={16} />
               Tipos de Clases
             </button>
             <button
               onClick={() => setActiveSection('students')}
-              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
-                activeSection === 'students'
-                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
-                  : 'text-light/60 hover:text-light hover:bg-white/5'
-              }`}
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeSection === 'students'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.01]'
+                : 'text-light/60 hover:text-light hover:bg-white/5'
+                }`}
             >
               <Users size={16} />
               Alumnos
             </button>
             <button
               onClick={() => setActiveSection('plans')}
-              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
-                activeSection === 'plans'
-                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
-                  : 'text-light/60 hover:text-light hover:bg-white/5'
-              }`}
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeSection === 'plans'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.01]'
+                : 'text-light/60 hover:text-light hover:bg-white/5'
+                }`}
             >
               <DollarSign size={16} />
               Planes
+            </button>
+            <button
+              onClick={() => setActiveSection('settings')}
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${activeSection === 'settings'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.01]'
+                : 'text-light/60 hover:text-light hover:bg-white/5'
+                }`}
+            >
+              <Settings size={16} />
+              Configuración
             </button>
           </div>
         </div>
@@ -751,195 +810,195 @@ export default function Admin() {
         {/* Schedules Section */}
         {activeSection === 'schedules' && (
           <>
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <p className="text-sm text-light/70">
-              {isMobile ? 'Toca para editar' : 'Arrastra para reorganizar'}
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {!isMobile && (
-              <>
-                <Button 
-                  size="sm"
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid size={16} className="sm:mr-1" />
-                  <span className="hidden sm:inline">Grid</span>
-                </Button>
-                <Button 
-                  size="sm"
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  onClick={() => setViewMode('list')}
-                >
-                  <List size={16} className="sm:mr-1" />
-                  <span className="hidden sm:inline">Lista</span>
-                </Button>
-              </>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <p className="text-sm text-light/70">
+                  {isMobile ? 'Toca para editar' : 'Arrastra para reorganizar'}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {!isMobile && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <Grid size={16} className="sm:mr-1" />
+                      <span className="hidden sm:inline">Grid</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      onClick={() => setViewMode('list')}
+                    >
+                      <List size={16} className="sm:mr-1" />
+                      <span className="hidden sm:inline">Lista</span>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center mb-6">
+              <Button onClick={() => setShowAddForm(!showAddForm)} size="sm" className="w-full sm:w-auto">
+                <Plus size={16} className="mr-1" />
+                <span>Nuevo</span>
+                <span className="hidden sm:inline ml-1">(Ctrl+N)</span>
+              </Button>
+              <div className="text-xs text-light/50 text-center sm:text-left sm:ml-2">
+                {schedules.length} clases • {schedules.filter(s => s.isActive).length} activas
+              </div>
+            </div>
+
+            {/* Add Form */}
+            {showAddForm && (
+              <div className="mb-6 transition-all">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Nueva Clase</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScheduleForm
+                      form={editForm}
+                      setForm={setEditForm}
+                      daysOfWeek={daysOfWeek}
+                      classTypes={classTypes}
+                      timeSlots={timeSlots}
+                      onSave={handleAdd}
+                      onCancel={() => {
+                        setShowAddForm(false);
+                        setEditForm({});
+                      }}
+                      isMobile={isMobile}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center mb-6">
-          <Button onClick={() => setShowAddForm(!showAddForm)} size="sm" className="w-full sm:w-auto">
-            <Plus size={16} className="mr-1" />
-            <span>Nuevo</span>
-            <span className="hidden sm:inline ml-1">(Ctrl+N)</span>
-          </Button>
-          <div className="text-xs text-light/50 text-center sm:text-left sm:ml-2">
-            {schedules.length} clases • {schedules.filter(s => s.isActive).length} activas
-          </div>
-        </div>
-
-        {/* Add Form */}
-        {showAddForm && (
-          <div className="mb-6 transition-all">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Nueva Clase</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScheduleForm
+            {/* Main Content */}
+            {viewMode === 'grid' && !isMobile ? (
+              <>
+                {/* Edit Dialog for Desktop */}
+                <EditScheduleDialog
+                  open={editingId !== null}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setEditingId(null);
+                      setEditForm({});
+                    }
+                  }}
                   form={editForm}
                   setForm={setEditForm}
                   daysOfWeek={daysOfWeek}
                   classTypes={classTypes}
                   timeSlots={timeSlots}
-                  onSave={handleAdd}
+                  onSave={handleSave}
                   onCancel={() => {
-                    setShowAddForm(false);
+                    setEditingId(null);
                     setEditForm({});
                   }}
-                  isMobile={isMobile}
                 />
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
-        {/* Main Content */}
-        {viewMode === 'grid' && !isMobile ? (
-          <>
-            {/* Edit Dialog for Desktop */}
-            <EditScheduleDialog
-              open={editingId !== null}
-              onOpenChange={(open) => {
-                if (!open) {
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[1000px] card p-4">
+                      <div className="grid grid-cols-8 gap-2">
+                        {/* Header */}
+                        <div className="font-semibold text-xs text-light/50 flex items-center justify-center">
+                          <Clock size={14} />
+                        </div>
+                        {daysOfWeek.map((day) => (
+                          <div key={day} className="font-bold text-sm text-primary text-center">
+                            {day.slice(0, 3)}
+                          </div>
+                        ))}
+
+                        {/* Time Grid */}
+                        {timeSlots.map((time) => (
+                          <div key={time} className="contents">
+                            <div className="text-xs text-light/60 flex items-start justify-end pr-2 pt-2 border-t border-white/5">
+                              {time}
+                            </div>
+                            {daysOfWeek.map((day) => {
+                              const cellId = `${day}-${time}`;
+                              const classesAtSlot = schedules.filter(
+                                (s) => s.dayOfWeek === day && s.time === time
+                              );
+
+                              return (
+                                <DroppableCell key={cellId} id={cellId}>
+                                  <div className="space-y-1">
+                                    {classesAtSlot.map((schedule) => (
+                                      <ScheduleCard
+                                        key={schedule.id}
+                                        schedule={schedule}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onDuplicate={handleDuplicate}
+                                        onToggleActive={handleToggleActive}
+                                        isEditing={editingId === schedule.id}
+                                        editForm={editForm}
+                                        setEditForm={setEditForm}
+                                        onSave={handleSave}
+                                        onCancelEdit={() => {
+                                          setEditingId(null);
+                                          setEditForm({});
+                                        }}
+                                        daysOfWeek={daysOfWeek}
+                                        classTypes={classTypes}
+                                        timeSlots={timeSlots}
+                                        isMobile={false}
+                                      />
+                                    ))}
+                                  </div>
+                                </DroppableCell>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DragOverlay>
+                    {activeId ? (
+                      <div className="card p-2 opacity-80 cursor-grabbing">
+                        {schedules.find(s => s.id === activeId)?.className}
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              </>
+            ) : (
+              <ScheduleListView
+                schedules={schedules}
+                daysOfWeek={daysOfWeek}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
+                onToggleActive={handleToggleActive}
+                editingId={editingId}
+                editForm={editForm}
+                setEditForm={setEditForm}
+                onSave={handleSave}
+                onCancelEdit={() => {
                   setEditingId(null);
                   setEditForm({});
-                }
-              }}
-              form={editForm}
-              setForm={setEditForm}
-              daysOfWeek={daysOfWeek}
-              classTypes={classTypes}
-              timeSlots={timeSlots}
-              onSave={handleSave}
-              onCancel={() => {
-                setEditingId(null);
-                setEditForm({});
-              }}
-            />
-            
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="overflow-x-auto">
-              <div className="min-w-[1000px] card p-4">
-                <div className="grid grid-cols-8 gap-2">
-                  {/* Header */}
-                  <div className="font-semibold text-xs text-light/50 flex items-center justify-center">
-                    <Clock size={14} />
-                  </div>
-                  {daysOfWeek.map((day) => (
-                    <div key={day} className="font-bold text-sm text-primary text-center">
-                      {day.slice(0, 3)}
-                    </div>
-                  ))}
-
-                  {/* Time Grid */}
-                  {timeSlots.map((time) => (
-                    <div key={time} className="contents">
-                      <div className="text-xs text-light/60 flex items-start justify-end pr-2 pt-2 border-t border-white/5">
-                        {time}
-                      </div>
-                      {daysOfWeek.map((day) => {
-                        const cellId = `${day}-${time}`;
-                        const classesAtSlot = schedules.filter(
-                          (s) => s.dayOfWeek === day && s.time === time
-                        );
-
-                        return (
-                          <DroppableCell key={cellId} id={cellId}>
-                            <div className="space-y-1">
-                              {classesAtSlot.map((schedule) => (
-                                <ScheduleCard
-                                  key={schedule.id}
-                                  schedule={schedule}
-                                  onEdit={handleEdit}
-                                  onDelete={handleDelete}
-                                  onDuplicate={handleDuplicate}
-                                  onToggleActive={handleToggleActive}
-                                  isEditing={editingId === schedule.id}
-                                  editForm={editForm}
-                                  setEditForm={setEditForm}
-                                  onSave={handleSave}
-                                  onCancelEdit={() => {
-                                    setEditingId(null);
-                                    setEditForm({});
-                                  }}
-                                  daysOfWeek={daysOfWeek}
-                                  classTypes={classTypes}
-                                  timeSlots={timeSlots}
-                                  isMobile={false}
-                                />
-                              ))}
-                            </div>
-                          </DroppableCell>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <DragOverlay>
-              {activeId ? (
-                <div className="card p-2 opacity-80 cursor-grabbing">
-                  {schedules.find(s => s.id === activeId)?.className}
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-          </>
-        ) : (
-          <ScheduleListView
-            schedules={schedules}
-            daysOfWeek={daysOfWeek}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onToggleActive={handleToggleActive}
-            editingId={editingId}
-            editForm={editForm}
-            setEditForm={setEditForm}
-            onSave={handleSave}
-            onCancelEdit={() => {
-              setEditingId(null);
-              setEditForm({});
-            }}
-            classTypes={classTypes}
-            timeSlots={timeSlots}
-            isMobile={isMobile}
-          />
-        )}
+                }}
+                classTypes={classTypes}
+                timeSlots={timeSlots}
+                isMobile={isMobile}
+              />
+            )}
           </>
         )}
 
@@ -971,6 +1030,11 @@ export default function Admin() {
             onUpdate={handleUpdatePlan}
             onDelete={handleDeletePlan}
           />
+        )}
+
+        {/* Settings Section */}
+        {activeSection === 'settings' && (
+          <SettingsManager sessionToken={session} />
         )}
       </Section>
     </Layout>

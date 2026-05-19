@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
@@ -13,9 +14,32 @@ export function meta() {
 }
 
 export default function Clases() {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsAdmin(!!localStorage.getItem("admin_session"));
+    }
+  }, []);
+
   return (
     <Layout>
       <Section className="section-sm">
+        {isAdmin && (
+          <div className="mb-8 p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in text-center sm:text-left">
+            <div>
+              <p className="text-sm font-bold text-white">Sesión de administrador activa</p>
+              <p className="text-xs text-light/60">Puedes administrar las clases directamente desde aquí.</p>
+            </div>
+            <Link 
+              to="/admin?tab=classTypes" 
+              className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg shadow-primary/15 whitespace-nowrap"
+            >
+              Ir a Administrador de Clases
+            </Link>
+          </div>
+        )}
+
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">
             Nuestras <span className="text-gradient">Clases</span>
@@ -33,6 +57,7 @@ export default function Clases() {
             intensity="Baja-Media"
             intensityLevel={2}
             icon={Heart}
+            isAdmin={isAdmin}
           />
           <ClassCard
             title="CrossFit WOD"
@@ -42,6 +67,7 @@ export default function Clases() {
             intensityLevel={3}
             icon={Flame}
             featured
+            isAdmin={isAdmin}
           />
           <ClassCard
             title="CrossFit Competition"
@@ -50,6 +76,7 @@ export default function Clases() {
             intensity="Alta"
             intensityLevel={4}
             icon={TrendingUp}
+            isAdmin={isAdmin}
           />
           <ClassCard
             title="Olympic Lifting"
@@ -58,6 +85,7 @@ export default function Clases() {
             intensity="Media"
             intensityLevel={2}
             icon={Dumbbell}
+            isAdmin={isAdmin}
           />
           <ClassCard
             title="CrossFit Kids & Teens"
@@ -66,6 +94,7 @@ export default function Clases() {
             intensity="Media"
             intensityLevel={2}
             icon={Users}
+            isAdmin={isAdmin}
           />
           <ClassCard
             title="Open Gym"
@@ -74,6 +103,7 @@ export default function Clases() {
             intensity="Variable"
             intensityLevel={1}
             icon={Clock}
+            isAdmin={isAdmin}
           />
         </div>
 
@@ -126,6 +156,7 @@ function ClassCard({
   intensityLevel,
   icon: Icon,
   featured = false,
+  isAdmin = false,
 }: {
   title: string;
   description: string;
@@ -134,6 +165,7 @@ function ClassCard({
   intensityLevel: number;
   icon: React.ElementType;
   featured?: boolean;
+  isAdmin?: boolean;
 }) {
   return (
     <Card className={`animate-fade-in-up ${featured ? "border-primary" : ""}`}>
@@ -170,10 +202,18 @@ function ClassCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-2">
         <Link to="/horario" className="btn btn-outline w-full">
           Ver Horarios
         </Link>
+        {isAdmin && (
+          <Link 
+            to="/admin?tab=classTypes" 
+            className="btn btn-outline w-full border-primary/50 text-primary hover:bg-primary hover:text-white transition-all duration-300 text-xs font-bold"
+          >
+            Editar Clase
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );

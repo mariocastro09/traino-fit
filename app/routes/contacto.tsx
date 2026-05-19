@@ -272,10 +272,10 @@ export default function Contacto() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full relative flex items-center justify-center gap-2 py-4 bg-primary text-black font-black text-xs tracking-widest uppercase hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(212,160,23,0.3)] transition-all duration-300 disabled:opacity-50"
+                          className="w-full relative flex items-center justify-center gap-2 py-4 bg-primary text-white font-black text-xs tracking-widest uppercase hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(212,160,23,0.3)] transition-all duration-300 disabled:opacity-50"
                         >
                           {loading ? (
-                            <span className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           ) : (
                             <>
                               RESERVAR MI CLASE DE PRUEBA

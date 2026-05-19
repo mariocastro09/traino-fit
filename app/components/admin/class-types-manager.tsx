@@ -73,7 +73,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
             Gestiona los tipos de clases disponibles y su código de color
           </p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold w-full sm:w-auto">
+        <Button onClick={handleOpenAdd} className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold w-full sm:w-auto">
           <Plus size={16} className="mr-1" />
           Nueva Clase
         </Button>
@@ -219,7 +219,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
               <Button 
                 onClick={handleSave} 
                 disabled={!form.name?.trim()}
-                className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold"
               >
                 {editingId ? 'Actualizar Clase' : 'Crear Clase'}
               </Button>

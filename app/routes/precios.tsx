@@ -119,7 +119,7 @@ function PlanCard({
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
       id={`plan-${plan.id}`}
-      className={`relative flex flex-col border transition-all duration-500 group overflow-hidden ${
+      className={`relative flex flex-col border transition-all duration-500 group overflow-hidden rounded-2xl ${
         plan.featured
           ? "border-primary/50 bg-gradient-to-b from-primary/8 to-zinc-950 shadow-[0_0_40px_-15px_rgba(212,160,23,0.3)]"
           : "border-white/8 bg-zinc-900/60 hover:border-white/15"
@@ -127,7 +127,7 @@ function PlanCard({
     >
       {plan.featured && (
         <div className="bg-primary py-2 text-center">
-          <span className="text-xs font-black tracking-[0.3em] uppercase text-dark">
+          <span className="text-xs font-black tracking-[0.3em] uppercase text-white">
             RECOMENDADO
           </span>
         </div>
@@ -175,9 +175,9 @@ function PlanCard({
         {/* CTA */}
         <Link
           to="/contacto"
-          className={`w-full py-3 text-center font-black text-xs uppercase tracking-widest transition-all duration-300 ${
+          className={`w-full py-3 text-center font-black text-xs uppercase tracking-widest rounded-xl transition-all duration-300 ${
             plan.featured
-              ? "bg-primary text-black hover:scale-105"
+              ? "bg-primary text-white hover:scale-105"
               : "bg-zinc-800 text-white hover:bg-zinc-700"
           }`}
         >
@@ -231,6 +231,7 @@ function SectionHeader({
 export default function Precios() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch("/api/plans")
@@ -247,6 +248,15 @@ export default function Precios() {
         setPlans([...defaultBoxPlans, ...defaultGymPlans, ...defaultHybridPlans]);
       })
       .finally(() => setLoading(false));
+
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data === "object") {
+          setSettings(data as Record<string, string>);
+        }
+      })
+      .catch((err) => console.error("Error loading settings:", err));
   }, []);
 
   const boxPlans = plans.filter((p: any) => p.moduleName === "TRAINO BOX");
@@ -257,6 +267,16 @@ export default function Precios() {
   const athleteFeatures = typeof athletePlan.features === "string"
     ? athletePlan.features.split(",").filter(Boolean)
     : (Array.isArray(athletePlan.features) ? athletePlan.features : []);
+
+  const renderTitle = (titleText: string) => {
+    const parts = titleText.split(/\[(.*?)\]/);
+    return parts.map((part, i) => {
+      if (i % 2 === 1) {
+        return <span key={i} className="text-primary">{part}</span>;
+      }
+      return part;
+    });
+  };
 
   return (
     <Layout>
@@ -286,31 +306,28 @@ export default function Precios() {
             transition={{ duration: 0.8 }}
           >
             <span className="inline-block px-4 py-1.5 border border-primary/30 bg-primary/10 text-xs font-bold tracking-[0.3em] uppercase text-primary mb-6">
-              Arquitectura de Precios
+              {settings.pricing_hero_badge || "Arquitectura de Precios"}
             </span>
             <h1
               className="text-5xl sm:text-6xl md:text-7xl font-black uppercase text-white mb-4 leading-none"
               style={{ fontFamily: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif", textShadow: "0 2px 40px rgba(0,0,0,0.8)" }}
             >
-              EL PLAN{" "}
-              <span className="text-primary">PERFECTO</span>
-              <br />
-              PARA TI
+              {renderTitle(settings.pricing_hero_title || "EL PLAN [PERFECTO] PARA TI")}
             </h1>
             <p className="text-sm md:text-lg text-gray-300 max-w-xl mx-auto">
-              Sin cargos ocultos. Sin contratos largos. Solo resultados.
+              {settings.pricing_hero_subtitle || "Sin cargos ocultos. Sin contratos largos. Solo resultados."}
             </p>
           </motion.div>
         </div>
       </div>
 
-      <Section className="bg-zinc-950 py-20">
+      <Section className="bg-zinc-950 py-10 md:py-20 px-4 md:px-0">
         {/* ─── MODULE 1: TRAINO BOX ─── */}
         <div className="mb-20">
           <SectionHeader
-            tag="Módulo 1"
-            title="TRAINO BOX — La Comunidad"
-            subtitle="Coaching, comunidad y WODs de alto rendimiento. Para quienes buscan superarse en equipo."
+            tag={settings.pricing_module_box_tag || "Módulo 1"}
+            title={settings.pricing_module_box_title || "TRAINO BOX — La Comunidad"}
+            subtitle={settings.pricing_module_box_subtitle || "Coaching, comunidad y WODs de alto rendimiento. Para quienes buscan superarse en equipo."}
             color="#ff6b35"
           />
           {loading ? (
@@ -326,7 +343,7 @@ export default function Precios() {
                   key={plan.id}
                   plan={plan}
                   accentColor="#ff6b35"
-                  groupLabel="TRAINO BOX"
+                  groupLabel={settings.pricing_module_box_title ? settings.pricing_module_box_title.split(" — ")[0] : "TRAINO BOX"}
                 />
               ))}
             </div>
@@ -348,9 +365,9 @@ export default function Precios() {
         {/* ─── MODULE 2: TRAINO GYM ─── */}
         <div className="mb-20">
           <SectionHeader
-            tag="Módulo 2"
-            title="TRAINO GYM — La Libertad"
-            subtitle="Autonomía total, fuerza bruta y equipamiento de última generación. Entrena bajo tus propias reglas."
+            tag={settings.pricing_module_gym_tag || "Módulo 2"}
+            title={settings.pricing_module_gym_title || "TRAINO GYM — La Libertad"}
+            subtitle={settings.pricing_module_gym_subtitle || "Autonomía total, fuerza bruta y equipamiento de última generación. Entrena bajo tus propias reglas."}
             color="#d4a017"
           />
           {loading ? (
@@ -366,7 +383,7 @@ export default function Precios() {
                   key={plan.id}
                   plan={plan}
                   accentColor="#d4a017"
-                  groupLabel="TRAINO GYM"
+                  groupLabel={settings.pricing_module_gym_title ? settings.pricing_module_gym_title.split(" — ")[0] : "TRAINO GYM"}
                 />
               ))}
             </div>
@@ -388,9 +405,9 @@ export default function Precios() {
         {/* ─── MODULE 3: ATHLETE — THE BIG CARD ─── */}
         <div>
           <SectionHeader
-            tag="Módulo 3"
-            title="TRAINO HYBRID — La Élite"
-            subtitle="Lo mejor de ambos mundos. El plan más rentable para el atleta serio."
+            tag={settings.pricing_module_hybrid_tag || "Módulo 3"}
+            title={settings.pricing_module_hybrid_title || "TRAINO HYBRID — La Élite"}
+            subtitle={settings.pricing_module_hybrid_subtitle || "Lo mejor de ambos mundos. El plan más rentable para el atleta serio."}
             color="#d4a017"
           />
 
@@ -402,23 +419,23 @@ export default function Precios() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               id="plan-athlete"
-              className="relative border-2 border-primary bg-gradient-to-br from-primary/10 via-zinc-950 to-zinc-900 overflow-hidden shadow-[0_0_80px_-20px_rgba(212,160,23,0.5)]"
+              className="relative border-2 border-primary bg-gradient-to-br from-primary/10 via-zinc-950 to-zinc-900 overflow-hidden rounded-2xl md:rounded-3xl shadow-[0_0_80px_-20px_rgba(212,160,23,0.5)]"
             >
               {/* Top accent bar */}
-              <div className="bg-gradient-to-r from-primary via-primary-300 to-primary py-3 text-center">
-                <span className="text-sm font-black tracking-[0.4em] uppercase text-dark">
+              <div className="bg-gradient-to-r from-primary via-primary-300 to-primary py-3 text-center px-4">
+                <span className="text-xs md:text-sm font-black tracking-[0.2em] md:tracking-[0.4em] uppercase text-dark">
                   ⭐ THE RECOMMENDED CHOICE — RENDIMIENTO TOTAL ⭐
                 </span>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
                 {/* Left — Info */}
-                <div className="p-10 lg:p-14 border-b lg:border-b-0 lg:border-r border-white/5">
+                <div className="p-8 md:p-14 border-b lg:border-b-0 lg:border-r border-white/5">
                   <span className="text-xs font-black tracking-[0.3em] uppercase text-primary mb-4 block">
-                    TRAINO HYBRID — MÓDULO 3
+                    {(settings.pricing_module_hybrid_title ? settings.pricing_module_hybrid_title.split(" — ")[0] : "TRAINO HYBRID") + " — " + (settings.pricing_module_hybrid_tag || "Módulo 3")}
                   </span>
                   <h3
-                    className="text-6xl md:text-7xl font-black uppercase text-white leading-none mb-2"
+                    className="text-5xl md:text-7xl font-black uppercase text-white leading-none mb-2"
                     style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}
                   >
                     {athletePlan.name}
@@ -441,26 +458,28 @@ export default function Precios() {
                     </span>
                   </p>
 
-                  <Link
-                    to="/contacto"
-                    id="plan-athlete-cta"
-                    className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(212,160,23,0.6)]"
-                  >
-                    {athletePlan.cta}
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex">
+                    <Link
+                      to="/contacto"
+                      id="plan-athlete-cta"
+                      className="inline-flex items-center justify-center gap-3 w-full sm:w-auto px-10 py-4 bg-primary text-white hover:bg-white hover:text-dark font-black text-sm uppercase tracking-widest rounded-xl hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 shadow-[0_0_40px_-10px_rgba(212,160,23,0.6)]"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
-                    </svg>
-                  </Link>
+                      {athletePlan.cta}
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2.5"
+                          d="M17 8l4 4m0 0l-4 4m4-4H3"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Right — Features */}

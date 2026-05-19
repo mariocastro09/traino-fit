@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Plus, Edit, Trash2, CheckCircle2, XCircle, Star, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle2, XCircle, Star, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -46,7 +46,7 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
       features: "",
       featured: false,
       cta: "Empieza aquí",
-      orderIndex: 0,
+      orderIndex: plans.length, // Put at the end
       isActive: true,
     });
     setShowDialog(true);
@@ -83,6 +83,34 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
     await onUpdate(plan.id, { ...plan, featured: !plan.featured });
   };
 
+  const handleMovePlan = async (plan: Plan, direction: "up" | "down") => {
+    const modulePlans = plans
+      .filter((p) => p.moduleName === plan.moduleName)
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+    const currentIndex = modulePlans.findIndex((p) => p.id === plan.id);
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= modulePlans.length) return;
+
+    const targetPlan = modulePlans[targetIndex];
+
+    const currentOrder = plan.orderIndex || 0;
+    const targetOrder = targetPlan.orderIndex || 0;
+
+    let newCurrentOrder = targetOrder;
+    let newTargetOrder = currentOrder;
+
+    // Safety fallback: if they both have same order indices, force distinct values
+    if (currentOrder === targetOrder) {
+      newCurrentOrder = direction === "up" ? currentOrder - 1 : currentOrder + 1;
+    }
+
+    await onUpdate(plan.id, { ...plan, orderIndex: newCurrentOrder });
+    await onUpdate(targetPlan.id, { ...targetPlan, orderIndex: newTargetOrder });
+  };
+
   // Group plans by module name
   const modules = ["TRAINO BOX", "TRAINO GYM", "TRAINO HYBRID"];
 
@@ -94,7 +122,7 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
             Planes y <span className="text-gradient">Membresías</span>
           </h2>
           <p className="text-sm text-light/70">
-            Personaliza y gestiona las tarifas y planes que se muestran online
+            Reorganiza planes usando las flechas y gestiona tarifas que se muestran online
           </p>
         </div>
         <Button onClick={handleOpenAdd}>
@@ -105,32 +133,58 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
 
       <div className="space-y-8">
         {modules.map((moduleName) => {
-          const modulePlans = plans.filter((p) => p.moduleName === moduleName);
+          const modulePlans = plans
+            .filter((p) => p.moduleName === moduleName)
+            .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
           return (
             <div key={moduleName} className="border-t border-white/5 pt-6 first:border-none first:pt-0">
               <h3 className="text-lg font-black tracking-wider uppercase text-primary mb-4">
                 {moduleName}
               </h3>
-              
+
               {modulePlans.length === 0 ? (
                 <div className="p-8 text-center border border-dashed border-white/10 text-light/40 rounded">
                   No hay planes creados en este módulo
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {modulePlans.map((plan) => (
-                    <Card 
-                      key={plan.id} 
+                  {modulePlans.map((plan, idx) => (
+                    <Card
+                      key={plan.id}
                       className={`relative overflow-hidden transition-all duration-300 ${
                         !plan.isActive ? "opacity-50" : ""
                       } ${plan.featured ? "border-primary/40 bg-primary/5" : ""}`}
                     >
-                      {plan.featured && (
-                        <div className="absolute top-2 right-2 text-primary">
-                          <Star size={16} className="fill-primary" />
+                      {/* Top Action Bar — Prevents collision with title/price */}
+                      <div className="flex justify-between items-center bg-zinc-900/40 px-3 py-2 border-b border-white/5">
+                        <div className="flex items-center gap-1 bg-zinc-950 border border-white/10 p-0.5 rounded shadow-inner">
+                          <button
+                            disabled={idx === 0}
+                            onClick={() => handleMovePlan(plan, "up")}
+                            className="h-6 w-6 flex items-center justify-center rounded bg-white/5 hover:bg-primary text-light/80 hover:text-white disabled:opacity-20 transition-all duration-200"
+                            title="Mover anterior"
+                          >
+                            <ChevronLeft size={14} />
+                          </button>
+                          <span className="text-[9px] font-black text-light/40 px-1.5 uppercase select-none tracking-wider">Orden</span>
+                          <button
+                            disabled={idx === modulePlans.length - 1}
+                            onClick={() => handleMovePlan(plan, "down")}
+                            className="h-6 w-6 flex items-center justify-center rounded bg-white/5 hover:bg-primary text-light/80 hover:text-white disabled:opacity-20 transition-all duration-200"
+                            title="Mover siguiente"
+                          >
+                            <ChevronRight size={14} />
+                          </button>
                         </div>
-                      )}
-                      
+                        {plan.featured && (
+                          <span className="text-[9px] uppercase font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded flex items-center gap-1">
+                            <Star size={10} className="fill-primary text-primary" />
+                            Destacado
+                          </span>
+                        )}
+                      </div>
+
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
                           <div>
@@ -152,22 +206,25 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
                           </CardDescription>
                         )}
                       </CardHeader>
-                      
+
                       <CardContent className="space-y-4">
                         <div className="border-t border-white/5 pt-3">
                           <span className="text-[10px] uppercase font-bold tracking-wider text-light/40 block mb-1">
                             Beneficios
                           </span>
                           <ul className="space-y-1">
-                            {plan.features.split(",").filter(Boolean).map((feat, idx) => (
-                              <li key={idx} className="text-xs text-light/80 flex items-center gap-1.5 truncate">
-                                <Sparkles size={10} className="text-primary flex-shrink-0" />
-                                <span>{feat}</span>
-                              </li>
-                            ))}
+                            {plan.features
+                              .split(",")
+                              .filter(Boolean)
+                              .map((feat, idx) => (
+                                <li key={idx} className="text-xs text-light/80 flex items-center gap-1.5 truncate">
+                                  <Sparkles size={10} className="text-primary flex-shrink-0" />
+                                  <span>{feat}</span>
+                                </li>
+                              ))}
                           </ul>
                         </div>
-                        
+
                         <div className="flex gap-1 flex-wrap pt-2 border-t border-white/5">
                           <Button size="sm" variant="outline" onClick={() => handleOpenEdit(plan)}>
                             <Edit size={14} className="mr-1" />
@@ -308,31 +365,17 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
-                  Texto Botón CTA *
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.cta || "Empieza aquí"}
-                  onChange={(e) => setForm({ ...form, cta: e.target.value })}
-                  placeholder="Ej: Empieza aquí"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
-                  Índice de Orden
-                </label>
-                <input
-                  type="number"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.orderIndex || 0}
-                  onChange={(e) => setForm({ ...form, orderIndex: parseInt(e.target.value) || 0 })}
-                  placeholder="Ej: 0"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                Texto Botón CTA *
+              </label>
+              <input
+                type="text"
+                className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                value={form.cta || "Empieza aquí"}
+                onChange={(e) => setForm({ ...form, cta: e.target.value })}
+                placeholder="Ej: Empieza aquí"
+              />
             </div>
 
             <div className="flex gap-6 pt-2">
@@ -367,10 +410,10 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
               <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={!form.name?.trim() || !form.price?.trim() || !form.features?.trim() || !form.cta?.trim()}
-                className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold"
               >
                 {editingId ? "Actualizar Plan" : "Crear Plan"}
               </Button>

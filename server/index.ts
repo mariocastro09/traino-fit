@@ -278,6 +278,46 @@ app.get('/api/admin/admins', requireAdmin, async (c) => {
   return c.json(admins);
 });
 
+// ==================== SETTINGS API ====================
+
+// Public API - Get all settings
+app.get('/api/settings', async (c) => {
+  try {
+    const db = drizzle(c.env.DB, { schema });
+    const allSettings = await db.query.settings.findMany();
+    const settingsMap = allSettings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+    return c.json(settingsMap);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Admin API - Update batch settings
+app.put('/api/admin/settings', requireAdmin, async (c) => {
+  const body = await c.req.json();
+  const db = drizzle(c.env.DB, { schema });
+
+  try {
+    for (const [key, value] of Object.entries(body)) {
+      const existing = await db.select().from(schema.settings).where(eq(schema.settings.key, key)).get();
+      if (existing) {
+        await db.update(schema.settings)
+          .set({ value: String(value), updatedAt: new Date() })
+          .where(eq(schema.settings.key, key));
+      } else {
+        await db.insert(schema.settings)
+          .values({ key, value: String(value), updatedAt: new Date() });
+      }
+    }
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
 // ==================== CLASS TYPES API ====================
 
 // Admin API - Get all class types

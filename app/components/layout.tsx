@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Instagram, MapPin, Phone, Mail } from "lucide-react";
 
 // ── WhatsApp floating button ──────────────────────
@@ -46,6 +46,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsAdmin(!!localStorage.getItem("admin_session"));
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-dark/95 backdrop-blur-md border-b border-white/10">
@@ -80,6 +87,14 @@ function Header() {
             <NavLink to="/precios">Precios</NavLink>
             <NavLink to="/instagram">Instagram</NavLink>
             <NavLink to="/contacto">Contacto</NavLink>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-lg text-xs hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg shadow-primary/15"
+              >
+                Admin
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -128,6 +143,17 @@ function Header() {
             >
               Contacto
             </MobileNavLink>
+            {isAdmin && (
+              <div className="px-4 py-2 mt-2">
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center py-2 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/95 transition-all duration-300 shadow-lg shadow-primary/10"
+                >
+                  Panel Admin
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </nav>
@@ -193,12 +219,25 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Brand */}
           <div className="space-y-4">
-            <h3
-              className="text-3xl font-black text-primary tracking-wide"
-              style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}
-            >
-              TRAINOFIT
-            </h3>
+            <Link to="/" className="inline-flex items-center gap-3 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm"></div>
+                <div className="relative bg-primary/10 p-2 rounded-full border-2 border-primary/30 group-hover:border-primary/60 transition-all">
+                  <img
+                    src="/traino-svg.svg"
+                    alt="Trainofit Logo"
+                    className="h-9 w-9 brightness-0 invert opacity-90"
+                    style={{
+                      filter:
+                        "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
+                    }}
+                  />
+                </div>
+              </div>
+              <span className="text-2xl font-black text-white tracking-wide group-hover:text-primary transition-colors uppercase" style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}>
+                TRAIN<span className="text-primary">O</span>FIT
+              </span>
+            </Link>
             <p className="text-gray-500 text-sm leading-relaxed">
               La potencia del Gym Tradicional y la intensidad del CrossFit en un
               solo lugar.
@@ -298,7 +337,7 @@ function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-600 text-xs">
-          <p>&copy; 2025 TrainoFit.cl — Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} TrainoFit.cl — Todos los derechos reservados.</p>
           <div className="flex items-center gap-4">
             <Link
               to="/admin"

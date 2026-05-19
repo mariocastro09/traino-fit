@@ -108,7 +108,7 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={handleOpenAdd} className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold py-2.5">
+          <Button onClick={handleOpenAdd} className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold py-2.5">
             <Plus size={16} className="mr-1" />
             Nuevo Alumno
           </Button>
@@ -400,7 +400,7 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
               <Button
                 onClick={handleSave}
                 disabled={!form.firstName?.trim() || !form.lastName?.trim() || !form.email?.trim() || !form.phone?.trim()}
-                className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold"
               >
                 {editingId ? 'Actualizar Alumno' : 'Crear Alumno'}
               </Button>
