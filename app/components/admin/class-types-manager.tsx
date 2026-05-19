@@ -31,7 +31,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setForm({ isActive: true });
+    setForm({ isActive: true, color: "#E63946" });
     setShowDialog(true);
   };
 
@@ -64,16 +64,16 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold mb-1">
             Tipos de <span className="text-gradient">Clases</span>
           </h2>
           <p className="text-sm text-light/70">
-            Gestiona los tipos de clases disponibles
+            Gestiona los tipos de clases disponibles y su código de color
           </p>
         </div>
-        <Button onClick={handleOpenAdd}>
+        <Button onClick={handleOpenAdd} className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold w-full sm:w-auto">
           <Plus size={16} className="mr-1" />
           Nueva Clase
         </Button>
@@ -81,43 +81,56 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {classTypes.map((classType) => (
-          <Card key={classType.id} className={!classType.isActive ? 'opacity-50' : ''}>
-            <CardHeader className="pb-3">
+          <Card 
+            key={classType.id} 
+            className={`relative overflow-hidden transition-all duration-300 bg-zinc-900/40 border-white/5 backdrop-blur-md hover:border-white/10 ${
+              !classType.isActive ? 'opacity-50' : ''
+            }`}
+          >
+            {/* Left side accent indicator */}
+            {classType.color && (
+              <div 
+                className="absolute top-0 left-0 w-1.5 h-full"
+                style={{ backgroundColor: classType.color }}
+              />
+            )}
+
+            <CardHeader className="pb-3 pl-6">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {classType.color && (
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: classType.color }}
-                    />
-                  )}
-                  <CardTitle className="text-lg truncate">{classType.name}</CardTitle>
+                  <CardTitle className="text-lg font-bold truncate text-white">{classType.name}</CardTitle>
                 </div>
                 {!classType.isActive && (
                   <XCircle size={16} className="text-red-400 flex-shrink-0" />
                 )}
               </div>
               {classType.description && (
-                <CardDescription className="line-clamp-2">
+                <CardDescription className="line-clamp-2 text-xs text-light/60 mt-1">
                   {classType.description}
                 </CardDescription>
               )}
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-1 flex-wrap">
-                <Button size="sm" variant="outline" onClick={() => handleOpenEdit(classType)}>
-                  <Edit size={14} className="mr-1" />
+            <CardContent className="pl-6">
+              <div className="flex gap-1.5 flex-wrap">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleOpenEdit(classType)}
+                  className="border-white/10 hover:bg-white/5 text-xs h-8"
+                >
+                  <Edit size={12} className="mr-1" />
                   Editar
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleToggleActive(classType)}
+                  className="border-white/10 hover:bg-white/5 text-xs h-8"
                 >
                   {classType.isActive ? (
-                    <XCircle size={14} className="mr-1" />
+                    <XCircle size={12} className="mr-1" />
                   ) : (
-                    <CheckCircle2 size={14} className="mr-1" />
+                    <CheckCircle2 size={12} className="mr-1" />
                   )}
                   {classType.isActive ? 'Desactivar' : 'Activar'}
                 </Button>
@@ -129,9 +142,9 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
                       onDelete(classType.id);
                     }
                   }}
-                  className="text-red-400 hover:text-red-300"
+                  className="border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 text-xs h-8 text-red-400"
                 >
-                  <Trash2 size={14} className="mr-1" />
+                  <Trash2 size={12} className="mr-1" />
                   Eliminar
                 </Button>
               </div>
@@ -142,27 +155,27 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-zinc-950 border border-white/10 text-white shadow-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-bold">
               {editingId ? 'Editar Tipo de Clase' : 'Nuevo Tipo de Clase'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Nombre *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Nombre *</label>
               <input
                 type="text"
-                className="w-full p-2 rounded bg-secondary/30 border border-secondary focus:border-primary outline-none"
+                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
                 value={form.name || ''}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Ej: CrossFit WOD"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Descripción</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Descripción</label>
               <textarea
-                className="w-full p-2 rounded bg-secondary/30 border border-secondary focus:border-primary outline-none"
+                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
                 value={form.description || ''}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Descripción del tipo de clase"
@@ -170,41 +183,45 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Color</label>
-              <div className="flex gap-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Color de Identificación</label>
+              <div className="flex gap-3">
                 <input
                   type="color"
-                  className="h-10 w-20 rounded border border-secondary cursor-pointer"
+                  className="h-11 w-20 rounded border border-white/10 cursor-pointer bg-zinc-900 p-1"
                   value={form.color || '#E63946'}
                   onChange={(e) => setForm({ ...form, color: e.target.value })}
                 />
                 <input
                   type="text"
-                  className="flex-1 p-2 rounded bg-secondary/30 border border-secondary focus:border-primary outline-none"
+                  className="flex-1 p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
                   value={form.color || ''}
                   onChange={(e) => setForm({ ...form, color: e.target.value })}
                   placeholder="#E63946"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-2">
               <input
                 type="checkbox"
                 id="isActive"
                 checked={form.isActive ?? true}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-4 h-4"
+                className="w-4 h-4 rounded border-white/10 bg-zinc-900 text-primary focus:ring-0 cursor-pointer"
               />
-              <label htmlFor="isActive" className="text-sm font-medium cursor-pointer">
-                Activo
+              <label htmlFor="isActive" className="text-sm font-medium cursor-pointer text-light/80">
+                Tipo de Clase Activo
               </label>
             </div>
-            <div className="flex gap-2 justify-end pt-2">
+            <div className="flex gap-2 justify-end pt-4 border-t border-white/5">
               <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button onClick={handleSave} disabled={!form.name?.trim()}>
-                {editingId ? 'Actualizar' : 'Crear'}
+              <Button 
+                onClick={handleSave} 
+                disabled={!form.name?.trim()}
+                className="bg-primary text-black hover:scale-105 transition-all duration-300 font-bold"
+              >
+                {editingId ? 'Actualizar Clase' : 'Crear Clase'}
               </Button>
             </div>
           </div>

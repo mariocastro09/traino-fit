@@ -614,16 +614,27 @@ export default function Admin() {
   if (!authenticated) {
     return (
       <Layout>
-        <Section className="min-h-screen flex items-center justify-center">
-          <Card className="max-w-md w-full">
-            <CardHeader>
-              <CardTitle className="text-2xl">Panel de Administración</CardTitle>
-              <CardDescription>
-                Inicia sesión con tu cuenta de Google autorizada para acceder al panel de administración.
+        <Section className="min-h-screen flex items-center justify-center relative overflow-hidden">
+          {/* Background Radial Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+          
+          <Card className="max-w-md w-full bg-zinc-950/80 border border-white/10 backdrop-blur-xl relative z-10 shadow-2xl shadow-black/80">
+            <CardHeader className="text-center pt-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-600 p-0.5 shadow-lg shadow-primary/20 mx-auto mb-6 flex items-center justify-center">
+                <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center">
+                  <Users size={24} className="text-primary animate-pulse" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-black uppercase tracking-wider text-white">Panel de Control</CardTitle>
+              <CardDescription className="text-light/50 mt-2 text-sm">
+                Inicia sesión con tu cuenta de Google autorizada para gestionar TrainoFit.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button onClick={handleLogin} className="w-full">
+            <CardContent className="pb-8">
+              <Button 
+                onClick={handleLogin} 
+                className="w-full bg-primary hover:bg-primary/90 text-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-bold py-6 text-base shadow-lg shadow-primary/10"
+              >
                 Iniciar Sesión con Google
               </Button>
             </CardContent>
@@ -636,62 +647,102 @@ export default function Admin() {
   return (
     <Layout>
       <Section className="section-sm">
-        {/* Header with Tabs */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              Panel de <span className="text-gradient">Administración</span>
-            </h1>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut size={16} className="sm:mr-1" />
-              <span className="hidden sm:inline">Salir</span>
+        {/* Header with Title & Logout */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+                Panel de <span className="text-gradient">Administración</span>
+              </h1>
+              <p className="text-xs text-light/40 mt-1 uppercase font-bold tracking-widest">TrainoFit Backoffice</p>
+            </div>
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              size="sm"
+              className="border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all duration-300 font-bold"
+            >
+              <LogOut size={16} className="mr-2" />
+              Salir
             </Button>
           </div>
 
+          {/* Dashboard Stats Overview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
+              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Clases Activas</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-2xl sm:text-3xl font-black text-white">{schedules.filter(s => s.isActive).length}</span>
+                <span className="text-[10px] text-primary font-bold">/ {schedules.length} total</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
+              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Tipos de Clases</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-2xl sm:text-3xl font-black text-white">{classTypes.filter(c => c.isActive).length}</span>
+                <span className="text-[10px] text-yellow-500 font-bold">/ {classTypes.length} total</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
+              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Alumnos Activos</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-2xl sm:text-3xl font-black text-white">{students.filter(s => s.isActive).length}</span>
+                <span className="text-[10px] text-green-400 font-bold">/ {students.length} total</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-zinc-900/40 border border-white/5 backdrop-blur-md flex flex-col justify-between transition-all hover:border-white/10">
+              <span className="text-[10px] uppercase font-black tracking-wider text-light/40">Planes Online</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-2xl sm:text-3xl font-black text-white">{plans.filter(p => p.isActive).length}</span>
+                <span className="text-[10px] text-purple-400 font-bold">/ {plans.length} total</span>
+              </div>
+            </div>
+          </div>
+
           {/* Tab Navigation */}
-          <div className="flex gap-2 border-b border-white/10 overflow-x-auto">
+          <div className="flex p-1 bg-zinc-900/80 border border-white/5 rounded-xl gap-1 overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveSection('schedules')}
-              className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeSection === 'schedules'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-light/70 hover:text-light'
+                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
+                  : 'text-light/60 hover:text-light hover:bg-white/5'
               }`}
             >
-              <CalendarDays size={18} />
+              <CalendarDays size={16} />
               Horarios
             </button>
             <button
               onClick={() => setActiveSection('classTypes')}
-              className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeSection === 'classTypes'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-light/70 hover:text-light'
+                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
+                  : 'text-light/60 hover:text-light hover:bg-white/5'
               }`}
             >
-              <BookOpen size={18} />
+              <BookOpen size={16} />
               Tipos de Clases
             </button>
-             <button
+            <button
               onClick={() => setActiveSection('students')}
-              className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeSection === 'students'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-light/70 hover:text-light'
+                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
+                  : 'text-light/60 hover:text-light hover:bg-white/5'
               }`}
             >
-              <Users size={18} />
+              <Users size={16} />
               Alumnos
             </button>
             <button
               onClick={() => setActiveSection('plans')}
-              className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeSection === 'plans'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-light/70 hover:text-light'
+                  ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.01]'
+                  : 'text-light/60 hover:text-light hover:bg-white/5'
               }`}
             >
-              <DollarSign size={18} />
+              <DollarSign size={16} />
               Planes
             </button>
           </div>
