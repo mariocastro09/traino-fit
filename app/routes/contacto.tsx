@@ -110,23 +110,75 @@ export default function Contacto() {
               </div>
 
               {/* Horarios */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2.5 text-primary">
                   <Clock size={18} />
-                  <span className="text-xs font-bold tracking-[0.15em] uppercase">Horarios de Atención</span>
+                  <span className="text-xs font-bold tracking-[0.15em] uppercase">Horarios de Clases</span>
                 </div>
-                <div className="pl-7 space-y-1.5 text-xs text-gray-300">
-                  <div className="flex justify-between max-w-xs border-b border-white/5 pb-1">
-                    <span className="text-gray-500">Lunes a Viernes</span>
-                    <span className="font-mono">06:00 &mdash; 21:00</span>
+                <div className="pl-7 space-y-4 text-xs text-gray-300">
+                  {/* Lun, Mier, Vier */}
+                  <div className="space-y-2">
+                    <p className="font-extrabold text-white uppercase tracking-wider text-[10px] text-primary/95">
+                      Lunes, Miércoles y Viernes
+                    </p>
+                    <div className="space-y-1 pl-2.5 border-l border-white/10 font-mono text-[11px] text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>11:00 a 12:00 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>12:00 a 13:00 hrs</span>
+                      </div>
+                      <div className="pt-2 pb-0.5 text-[9px] text-gray-600 uppercase tracking-widest font-sans font-black">
+                        Bloques Tarde / Noche
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>17:30 a 18:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>18:30 a 19:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>19:30 a 20:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>20:30 a 21:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>21:30 a 22:30 hrs</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between max-w-xs border-b border-white/5 pb-1">
-                    <span className="text-gray-500">Sábado</span>
-                    <span className="font-mono">09:00 &mdash; 14:00</span>
-                  </div>
-                  <div className="flex justify-between max-w-xs">
-                    <span className="text-gray-500">Domingo</span>
-                    <span className="font-mono">09:00 &mdash; 12:00</span>
+
+                  {/* Mar, Jue */}
+                  <div className="space-y-2">
+                    <p className="font-extrabold text-white uppercase tracking-wider text-[10px] text-primary/95">
+                      Martes y Jueves
+                    </p>
+                    <div className="space-y-1 pl-2.5 border-l border-white/10 font-mono text-[11px] text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>17:30 a 18:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>18:30 a 19:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>19:30 a 20:30 hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/45" />
+                        <span>20:30 a 21:30 hrs</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
