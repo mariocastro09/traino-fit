@@ -32,10 +32,19 @@ app.use('/*', cors({
 
 // Initialize Google OAuth
 function getGoogleAuth(c: any) {
+  let redirectUri = c.env.GOOGLE_REDIRECT_URI;
+  try {
+    const url = new URL(c.req.url);
+    // Dynamically build redirect URI based on the request origin to match the active domain (e.g., localhost or trainofit.cl)
+    redirectUri = `${url.protocol}//${url.host}/api/auth/callback`;
+  } catch (e) {
+    // Fallback to env variable
+  }
+
   return new Google(
     c.env.GOOGLE_CLIENT_ID,
     c.env.GOOGLE_CLIENT_SECRET,
-    c.env.GOOGLE_REDIRECT_URI
+    redirectUri
   );
 }
 
