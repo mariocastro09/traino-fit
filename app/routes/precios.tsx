@@ -268,6 +268,28 @@ export default function Precios() {
     ? athletePlan.features.split(",").filter(Boolean)
     : (Array.isArray(athletePlan.features) ? athletePlan.features : []);
 
+  const unlimitedGymPlan = gymPlans.find((p: any) => p.name === "LIBRE") || gymPlans[gymPlans.length - 1] || defaultGymPlans[1];
+  const unlimitedBoxPlan = boxPlans.find((p: any) => p.name === "RX") || boxPlans[boxPlans.length - 1] || defaultBoxPlans[2];
+
+  const getPriceNumber = (priceStr: string) => {
+    return parseInt(priceStr.replace(/[^0-9]/g, ""), 10) || 0;
+  };
+
+  const gymPriceVal = unlimitedGymPlan?.price || "$39.990";
+  const boxPriceVal = unlimitedBoxPlan?.price || "$54.990";
+  const athletePriceVal = athletePlan?.price || "$69.990";
+
+  const gymPriceNum = getPriceNumber(gymPriceVal);
+  const boxPriceNum = getPriceNumber(boxPriceVal);
+  const athletePriceNum = getPriceNumber(athletePriceVal);
+
+  const combinedPrice = gymPriceNum + boxPriceNum;
+  const savings = combinedPrice - athletePriceNum;
+
+  const formatCLP = (val: number) => {
+    return "$" + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
   const renderTitle = (titleText: string) => {
     const parts = titleText.split(/\[(.*?)\]/);
     return parts.map((part, i) => {
@@ -498,17 +520,45 @@ export default function Precios() {
                     ))}
                   </ul>
 
-                  {/* Psychology note */}
-                  <div className="mt-10 p-4 bg-primary/5 border border-primary/20">
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      💡{" "}
-                      <span className="text-primary font-semibold">
-                        ¿Por qué {athletePlan.name}?
-                      </span>{" "}
-                      En vez de pagar Gym ($39.990) + Box ($54.990) por separado,
-                      el plan {athletePlan.name} te da todo por{" "}
-                      <span className="text-white font-bold">{athletePlan.price}</span>. La
-                      matemática habla sola.
+                  {/* Psychology / Smart Savings Card */}
+                  <div className="mt-10 p-6 bg-primary/5 border border-primary/20 rounded-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-xl pointer-events-none" />
+                    
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-base">💡</span>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-primary">
+                        Análisis de Ahorro Inteligente
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Paso 1: Módulo Gym ({unlimitedGymPlan?.name || "Libre"})</span>
+                        <span className="font-mono text-white">{gymPriceVal}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400 border-b border-white/5 pb-2">
+                        <span>Paso 2: Módulo Box ({unlimitedBoxPlan?.name || "RX"})</span>
+                        <span className="font-mono text-white">{boxPriceVal}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Total Comprando por separado:</span>
+                        <span className="font-mono line-through text-red-400">{formatCLP(combinedPrice)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs font-bold text-white bg-primary/10 p-2.5 rounded-lg border border-primary/20">
+                        <span className="flex items-center gap-1">
+                          ⚡ Plan {athletePlan.name} (Todo Incluido):
+                        </span>
+                        <span className="font-mono text-primary">{athletePriceVal}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-300 leading-relaxed font-light">
+                      En vez de pagar matrículas y mensualidades dobles, el plan{" "}
+                      <span className="text-white font-bold">{athletePlan.name}</span> unifica
+                      todo en una sola membresía inteligente.{" "}
+                      <span className="text-emerald-400 font-bold">
+                        ¡Ahorras {formatCLP(savings)} mensuales!
+                      </span>
                     </p>
                   </div>
                 </div>

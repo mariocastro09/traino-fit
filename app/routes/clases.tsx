@@ -36,13 +36,122 @@ const itemVariants = {
   },
 };
 
+const defaultClasses = [
+  {
+    name: "CrossFit Fundamentals",
+    description: "Aprende los movimientos básicos con seguridad y técnica impecable. Perfecto para principiantes que quieren empezar con el pie derecho."
+  },
+  {
+    name: "CrossFit WOD",
+    description: "El entrenamiento del día completo. Combinación de cardio, fuerza y movimientos gimnásticos para un estímulo funcional integral."
+  },
+  {
+    name: "CrossFit Competition",
+    description: "Para atletas avanzados que buscan llevar su rendimiento al siguiente nivel. Enfoque en volumen, cargas pesadas y estrategia de competencia."
+  },
+  {
+    name: "Olympic Lifting",
+    description: "Técnica de levantamiento olímpico. Snatch, Clean & Jerk con énfasis en la velocidad, movilidad y forma perfecta."
+  },
+  {
+    name: "CrossFit Kids & Teens",
+    description: "Programas adaptados para jóvenes atletas. Diversión, fitness funcional y desarrollo de habilidades motoras en un ambiente seguro."
+  },
+  {
+    name: "Open Gym",
+    description: "Entrena a tu propio ritmo con acceso completo a todo el equipamiento del box. Coaches de piso disponibles para asesoría."
+  }
+];
+
+const getMetaByName = (name: string) => {
+  const norm = name.toLowerCase();
+  if (norm.includes("wod")) {
+    return {
+      duration: "60 min",
+      intensity: "Media-Alta",
+      intensityLevel: 3,
+      icon: Flame,
+      featured: true
+    };
+  }
+  if (norm.includes("fundamentals") || norm.includes("fundamentos")) {
+    return {
+      duration: "60 min",
+      intensity: "Baja-Media",
+      intensityLevel: 2,
+      icon: Heart,
+      featured: false
+    };
+  }
+  if (norm.includes("compet") || norm.includes("avanzado")) {
+    return {
+      duration: "90 min",
+      intensity: "Alta",
+      intensityLevel: 4,
+      icon: TrendingUp,
+      featured: false
+    };
+  }
+  if (norm.includes("lifting") || norm.includes("halterofilia") || norm.includes("pesa")) {
+    return {
+      duration: "60 min",
+      intensity: "Media",
+      intensityLevel: 2,
+      icon: Dumbbell,
+      featured: false
+    };
+  }
+  if (norm.includes("kids") || norm.includes("teens") || norm.includes("niño")) {
+    return {
+      duration: "45 min",
+      intensity: "Media",
+      intensityLevel: 2,
+      icon: Users,
+      featured: false
+    };
+  }
+  if (norm.includes("open") || norm.includes("libre")) {
+    return {
+      duration: "Flexible",
+      intensity: "Variable",
+      intensityLevel: 1,
+      icon: Clock,
+      featured: false
+    };
+  }
+  return {
+    duration: "60 min",
+    intensity: "Media",
+    intensityLevel: 2,
+    icon: Dumbbell,
+    featured: false
+  };
+};
+
 export default function Clases() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [classTypesList, setClassTypesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsAdmin(!!localStorage.getItem("admin_session"));
     }
+
+    fetch("/api/class-types")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setClassTypesList(data);
+        } else {
+          setClassTypesList(defaultClasses);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading class types, using defaults:", err);
+        setClassTypesList(defaultClasses);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -96,68 +205,37 @@ export default function Clases() {
           </motion.div>
 
           {/* Classes Grid */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 px-4"
-          >
-            <ClassCard
-              title="CrossFit Fundamentals"
-              description="Aprende los movimientos básicos con seguridad y técnica impecable. Perfecto para principiantes que quieren empezar con el pie derecho."
-              duration="60 min"
-              intensity="Baja-Media"
-              intensityLevel={2}
-              icon={Heart}
-              isAdmin={isAdmin}
-            />
-            <ClassCard
-              title="CrossFit WOD"
-              description="El entrenamiento del día completo. Combinación de cardio, fuerza y movimientos gimnásticos para un estímulo funcional integral."
-              duration="60 min"
-              intensity="Media-Alta"
-              intensityLevel={3}
-              icon={Flame}
-              featured
-              isAdmin={isAdmin}
-            />
-            <ClassCard
-              title="CrossFit Competition"
-              description="Para atletas avanzados que buscan llevar su rendimiento al siguiente nivel. Enfoque en volumen, cargas pesadas y estrategia de competencia."
-              duration="90 min"
-              intensity="Alta"
-              intensityLevel={4}
-              icon={TrendingUp}
-              isAdmin={isAdmin}
-            />
-            <ClassCard
-              title="Olympic Lifting"
-              description="Técnica de levantamiento olímpico. Snatch, Clean & Jerk con énfasis en la velocidad, movilidad y forma perfecta."
-              duration="60 min"
-              intensity="Media"
-              intensityLevel={2}
-              icon={Dumbbell}
-              isAdmin={isAdmin}
-            />
-            <ClassCard
-              title="CrossFit Kids & Teens"
-              description="Programas adaptados para jóvenes atletas. Diversión, fitness funcional y desarrollo de habilidades motoras en un ambiente seguro."
-              duration="45 min"
-              intensity="Media"
-              intensityLevel={2}
-              icon={Users}
-              isAdmin={isAdmin}
-            />
-            <ClassCard
-              title="Open Gym"
-              description="Entrena a tu propio ritmo con acceso completo a todo el equipamiento del box. Coaches de piso disponibles para asesoría."
-              duration="Flexible"
-              intensity="Variable"
-              intensityLevel={1}
-              icon={Clock}
-              isAdmin={isAdmin}
-            />
-          </motion.div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 px-4">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div key={n} className="h-80 bg-zinc-900/40 border border-white/5 animate-pulse rounded-none" />
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 px-4"
+            >
+              {classTypesList.map((item: any) => {
+                const meta = getMetaByName(item.name);
+                return (
+                  <ClassCard
+                    key={item.id || item.name}
+                    title={item.name}
+                    description={item.description || ""}
+                    duration={meta.duration}
+                    intensity={meta.intensity}
+                    intensityLevel={meta.intensityLevel}
+                    icon={meta.icon}
+                    featured={meta.featured}
+                    isAdmin={isAdmin}
+                  />
+                );
+              })}
+            </motion.div>
+          )}
 
           {/* What to Expect */}
           <motion.div
