@@ -344,7 +344,7 @@ export default function Contacto() {
                       {activeTab === "form" ? (
                         <>
                           <h3
-                            className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-amber-400 mb-2"
+                            className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-primary mb-2"
                             style={{ fontFamily: "'Bebas Neue', sans-serif" }}
                           >
                             RESERVAR PRIMERA CLASE GRATIS
