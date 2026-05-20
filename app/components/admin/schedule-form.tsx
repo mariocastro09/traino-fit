@@ -44,8 +44,8 @@ export function ScheduleForm({
   isMobile = false,
 }: ScheduleFormProps) {
   const inputClass = compact
-    ? "w-full p-1 text-xs rounded bg-secondary/30 border border-secondary/50 focus:border-primary outline-none"
-    : "w-full p-2 rounded bg-secondary/30 border border-secondary focus:border-primary outline-none";
+    ? "w-full p-1 text-xs rounded bg-zinc-900 text-white border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors duration-200"
+    : "w-full p-2 rounded bg-zinc-900 text-white border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors duration-200";
   const labelClass = compact 
     ? "block text-[10px] font-medium mb-0.5 text-light/70" 
     : "block text-sm font-medium mb-2";
@@ -60,9 +60,9 @@ export function ScheduleForm({
             value={form.dayOfWeek || ''}
             onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value })}
           >
-            <option value="">Día</option>
+            <option value="" className="bg-zinc-900 text-white">Día</option>
             {daysOfWeek.map((day) => (
-              <option key={day} value={day}>
+              <option key={day} value={day} className="bg-zinc-900 text-white">
                 {isMobile && compact ? day.slice(0, 3) : day}
               </option>
             ))}
@@ -75,9 +75,9 @@ export function ScheduleForm({
             value={form.time || ''}
             onChange={(e) => setForm({ ...form, time: e.target.value })}
           >
-            <option value="">Hora</option>
+            <option value="" className="bg-zinc-900 text-white">Hora</option>
             {timeSlots.map((time) => (
-              <option key={time} value={time}>{time}</option>
+              <option key={time} value={time} className="bg-zinc-900 text-white">{time}</option>
             ))}
           </select>
         </div>
@@ -90,9 +90,9 @@ export function ScheduleForm({
           value={form.className || ''}
           onChange={(e) => setForm({ ...form, className: e.target.value })}
         >
-          <option value="">Seleccionar</option>
+          <option value="" className="bg-zinc-900 text-white">Seleccionar</option>
           {classTypes.map((type) => (
-            <option key={type.id} value={type.name}>{type.name}</option>
+            <option key={type.id} value={type.name} className="bg-zinc-900 text-white">{type.name}</option>
           ))}
         </select>
       </div>

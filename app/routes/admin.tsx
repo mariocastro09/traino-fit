@@ -102,7 +102,7 @@ export default function Admin() {
   const [plans, setPlans] = useState<any[]>([]);
 
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-  const timeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '10:30', '12:00', '17:00', '18:00', '19:00', '20:00'];
+  const timeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '10:30', '11:00', '12:00', '13:00', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
