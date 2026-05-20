@@ -1,7 +1,8 @@
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
 import { useState } from "react";
-import { MapPin, Phone, Mail, Instagram, Clock, ArrowRight, Check } from "lucide-react";
+import { useSearchParams } from "react-router";
+import { MapPin, Phone, Mail, Instagram, Clock, ArrowRight, Check, ShieldCheck, Sparkles, Lock, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 const WHATSAPP_NUMBER = "56932214427";
@@ -22,8 +23,51 @@ export function meta() {
 }
 
 export default function Contacto() {
+  const [searchParams] = useSearchParams();
+  const initialClase = searchParams.get("clase") || "hybrid";
+  const initialDia = searchParams.get("dia") || "";
+  const initialHora = searchParams.get("hora") || "";
+
+  const [activeTab, setActiveTab] = useState<"form" | "whatsapp">("form");
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [clase, setClase] = useState(initialClase);
+  const [mensaje, setMensaje] = useState(() => {
+    if (initialDia && initialHora) {
+      return `Hola, me interesa agendar una clase de prueba de ${initialClase} el día ${initialDia} a las ${initialHora}.`;
+    }
+    return "";
+  });
+
+  const getClassNameById = (id: string) => {
+    if (id === "hybrid") return "Traino Hybrid";
+    if (id === "box") return "Traino Box (CrossFit)";
+    if (id === "gym") return "Traino Gym";
+    return id;
+  };
+
+  const handleSelectClass = (classId: string) => {
+    const prevClassLabel = getClassNameById(clase);
+    const newClassLabel = getClassNameById(classId);
+    setClase(classId);
+
+    const defaultMsgForPrevClass = initialDia && initialHora
+      ? `Hola, me interesa agendar una clase de prueba de ${prevClassLabel} el día ${initialDia} a las ${initialHora}.`
+      : "";
+    const defaultEmptyMsg = "";
+
+    if (mensaje === defaultEmptyMsg || mensaje === defaultMsgForPrevClass) {
+      if (initialDia && initialHora) {
+        setMensaje(`Hola, me interesa agendar una clase de prueba de ${newClassLabel} el día ${initialDia} a las ${initialHora}.`);
+      }
+    }
+  };
+
+  const selectedClassLabel = getClassNameById(clase);
+  const waText = initialDia && initialHora
+    ? `Hola TrainoFit! Me interesa agendar mi clase de prueba gratis de ${selectedClassLabel} para el día ${initialDia} a las ${initialHora}.`
+    : `Hola TrainoFit! Me interesa agendar mi clase de prueba gratis de ${selectedClassLabel}.`;
+  const dynamicWhatsAppLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(waText)}`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -246,96 +290,203 @@ export default function Contacto() {
             <div className="lg:col-span-7">
               <div className="relative bg-zinc-900/40 border border-white/5 rounded-2xl p-8 sm:p-10 backdrop-blur-md">
                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                
+
+                {/* Visual value stack / reassurance checklist */}
+                {/* <div className="flex flex-wrap gap-2 mb-6 border-b border-white/5 pb-4">
+                  <div className="flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <Sparkles size={10} />
+                    <span>Clase 100% Gratis</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[9px] font-black text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <Clock size={10} />
+                    <span>Respuesta en 15 min</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[9px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <ShieldCheck size={10} />
+                    <span>Sin Compromiso</span>
+                  </div>
+                </div> */}
+
+                {/* Tab Switcher */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/30 rounded-xl mb-8 border border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("form")}
+                    className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 ${activeTab === "form"
+                      ? "bg-zinc-800 text-white shadow-lg border border-white/5"
+                      : "text-gray-500 hover:text-gray-300"
+                      }`}
+                  >
+                    Formulario Web
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("whatsapp")}
+                    className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${activeTab === "whatsapp"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg"
+                      : "text-gray-500 hover:text-gray-300"
+                      }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                    WhatsApp Express
+                  </button>
+                </div>
+
                 <AnimatePresence mode="wait">
                   {!formSubmitted ? (
                     <motion.div
-                      key="form"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      key={activeTab}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <h3
-                        className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-2"
-                        style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                      >
-                        RESERVAR PRIMERA CLASE GRATIS
-                      </h3>
-                      <p className="text-xs text-gray-400 mb-8 font-light">
-                        Déjanos tus datos. Te contactaremos por WhatsApp dentro de 15 minutos para agendar.
-                      </p>
+                      {activeTab === "form" ? (
+                        <>
+                          <h3
+                            className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-amber-400 mb-2"
+                            style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                          >
+                            RESERVAR PRIMERA CLASE GRATIS
+                          </h3>
+                          <p className="text-xs text-gray-400 mb-8 font-light leading-relaxed">
+                            Completa el formulario a continuación. Un coach se comunicará contigo por WhatsApp para agendar tu bloque de entrenamiento.
+                          </p>
 
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
-                            Nombre Completo
-                          </label>
-                          <input
-                            type="text"
-                            name="nombre"
-                            required
-                            placeholder="Ej. Juan Pérez"
-                            className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-light"
-                          />
-                        </div>
+                          <form onSubmit={handleSubmit} className="space-y-6">
+                            <input type="hidden" name="clase" value={clase} />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
-                              WhatsApp / Teléfono
-                            </label>
-                            <input
-                              type="tel"
-                              name="telefono"
-                              required
-                              placeholder="Ej. +56912345678"
-                              className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-mono font-light"
-                            />
-                          </div>
+                            <div>
+                              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2.5">
+                                Nombre Completo
+                              </label>
+                              <input
+                                type="text"
+                                name="nombre"
+                                required
+                                placeholder="Ej. Juan Pérez"
+                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-light"
+                              />
+                            </div>
 
-                          <div>
-                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
-                              Clase de Interés
-                            </label>
-                            <select
-                              name="clase"
-                              required
-                              className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-primary transition-colors font-light"
+                            <div className="space-y-6">
+                              <div>
+                                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2.5">
+                                  WhatsApp / Teléfono
+                                </label>
+                                <input
+                                  type="tel"
+                                  name="telefono"
+                                  required
+                                  placeholder="Ej. +56912345678"
+                                  className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-mono font-light"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-3">
+                                  Elige tu Clase de Interés
+                                </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  {[
+                                    ...(initialClase && !["hybrid", "box", "gym"].includes(initialClase)
+                                      ? [{ id: initialClase, name: initialClase, desc: "Horario Elegido", icon: "📅" }]
+                                      : []),
+                                    { id: "hybrid", name: "Traino Hybrid", desc: "Funcional & Fuerza", icon: "⚡" },
+                                    { id: "box", name: "Traino Box", desc: "CrossFit y Gimnasia", icon: "🏋️‍♂️" },
+                                    { id: "gym", name: "Traino Gym", desc: "Musculación Guiada", icon: "💪" }
+                                  ].map((item) => {
+                                    const isSelected = clase === item.id;
+                                    return (
+                                      <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => handleSelectClass(item.id)}
+                                        className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all duration-300 ${isSelected
+                                          ? "bg-primary/10 border-primary text-white shadow-[0_0_20px_rgba(212,160,23,0.15)]"
+                                          : "bg-black/20 border-white/10 text-gray-400 hover:border-white/20 hover:text-white"
+                                          }`}
+                                      >
+                                        <span className="text-xl mb-1.5">{item.icon}</span>
+                                        <span className="text-[11px] font-black uppercase tracking-wider">{item.name}</span>
+                                        <span className="text-[9px] text-gray-500 font-light mt-1">{item.desc}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2.5">
+                                Mensaje (Opcional)
+                              </label>
+                              <textarea
+                                name="mensaje"
+                                rows={3}
+                                value={mensaje}
+                                onChange={(e) => setMensaje(e.target.value)}
+                                placeholder="Cuéntanos sobre tu nivel o si tienes lesiones..."
+                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-light"
+                              />
+                            </div>
+
+                            <button
+                              type="submit"
+                              disabled={loading}
+                              className="w-full relative flex items-center justify-center gap-2 py-4 bg-primary text-white font-black text-xs tracking-widest uppercase hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(212,160,23,0.3)] transition-all duration-300 disabled:opacity-50"
                             >
-                              <option value="hybrid" className="bg-zinc-900">Traino Hybrid (Recomendado)</option>
-                              <option value="box" className="bg-zinc-900">Traino Box (CrossFit)</option>
-                              <option value="gym" className="bg-zinc-900">Traino Gym (Tradicional)</option>
-                            </select>
+                              {loading ? (
+                                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  CONFIRMAR RESERVA GRATUITA
+                                  <ArrowRight size={14} />
+                                </>
+                              )}
+                            </button>
+                          </form>
+                        </>
+                      ) : (
+                        <div className="space-y-6 py-2">
+                          <h3
+                            className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-2"
+                            style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                          >
+                            RESERVA EXPRESS VÍA WHATSAPP
+                          </h3>
+                          <p className="text-xs text-gray-400 mb-4 font-light leading-relaxed">
+                            ¿Prefieres no llenar el formulario? Abre un chat directo con nosotros. Hemos pre-escrito tu mensaje de reserva para que solo tengas que presionar "Enviar".
+                          </p>
+
+                          <div className="bg-black/30 border border-white/10 rounded-xl p-4.5 mb-6 relative">
+                            <div className="absolute top-2 right-3 text-[9px] uppercase tracking-wider text-gray-600 font-black">
+                              Vista Previa del Mensaje
+                            </div>
+                            <p className="text-xs text-emerald-400 font-mono italic leading-relaxed mt-2.5">
+                              "{waText}"
+                            </p>
                           </div>
-                        </div>
 
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
-                            Mensaje (Opcional)
-                          </label>
-                          <textarea
-                            name="mensaje"
-                            rows={3}
-                            placeholder="Cuéntanos sobre tu nivel o si tienes lesiones..."
-                            className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors font-light"
-                          />
+                          <a
+                            href={dynamicWhatsAppLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full relative flex items-center justify-center gap-2 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-widest uppercase hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all duration-300 rounded-lg"
+                          >
+                            <MessageSquare size={14} className="animate-pulse" />
+                            ENVIAR WHATSAPP AHORA
+                          </a>
                         </div>
+                      )}
 
-                        <button
-                          type="submit"
-                          disabled={loading}
-                          className="w-full relative flex items-center justify-center gap-2 py-4 bg-primary text-white font-black text-xs tracking-widest uppercase hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(212,160,23,0.3)] transition-all duration-300 disabled:opacity-50"
-                        >
-                          {loading ? (
-                            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              RESERVAR MI CLASE DE PRUEBA
-                              <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </form>
+                      {/* Security and Trust Badges */}
+                      <div className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] text-gray-500 font-bold uppercase tracking-wider">
+                        <span className="flex items-center gap-1.5">
+                          <Lock size={12} className="text-primary" />
+                          Tus datos están 100% seguros
+                        </span>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div

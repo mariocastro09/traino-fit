@@ -88,6 +88,25 @@ export const settings = sqliteTable('settings', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+// Rate limiting table (ISO 27001 A.9.4.2 - Brute Force Protection)
+export const rateLimits = sqliteTable('rate_limits', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ip: text('ip').notNull(),
+  endpoint: text('endpoint').notNull(),
+  attemptedAt: text('attempted_at').notNull(),
+});
+
+// Audit log table (ISO 27001 A.12.4.1 - Event Logging)
+export const auditLog = sqliteTable('audit_log', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  eventType: text('event_type').notNull(),
+  email: text('email'),
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  details: text('details'), // JSON string
+  createdAt: text('created_at').notNull(),
+});
+
 export type Admin = typeof admins.$inferSelect;
 export type NewAdmin = typeof admins.$inferInsert;
 export type ClassType = typeof classTypes.$inferSelect;
@@ -102,3 +121,6 @@ export type Plan = typeof plans.$inferSelect;
 export type NewPlan = typeof plans.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+export type RateLimit = typeof rateLimits.$inferSelect;
+export type AuditLogEntry = typeof auditLog.$inferSelect;
+

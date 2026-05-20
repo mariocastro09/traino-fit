@@ -1,8 +1,8 @@
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Clock, Calendar, User, Users, Info, Zap, X, Filter } from "lucide-react";
+import { Link } from "react-router";
+import { Clock, Calendar, User, Users, Info, Zap, X, Filter, ChevronRight, ArrowRight } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -33,6 +33,9 @@ export default function Horario() {
   // Filter states
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterTime, setFilterTime] = useState<'AM' | 'PM' | null>(null);
+  
+  // Mobile active tab (defaults to 'Lunes', will update to current day)
+  const [activeTab, setActiveTab] = useState<string>('Lunes');
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -98,7 +101,9 @@ export default function Horario() {
       0: 'Domingo',
     };
     const today = new Date().getDay();
-    setHighlightedDay(daysMap[today] || null);
+    const todayStr = daysMap[today] || 'Lunes';
+    setHighlightedDay(todayStr);
+    setActiveTab(todayStr);
   }, []);
 
   // Get unique class types for filter
@@ -142,14 +147,14 @@ export default function Horario() {
   if (loading) {
     return (
       <Layout>
-        <Section className="min-h-screen flex items-center justify-center">
+        <Section className="min-h-[60vh] flex items-center justify-center bg-gray-950">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center"
           >
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-light/70">Cargando horarios...</p>
+            <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 font-bold">Cargando Horarios...</p>
           </motion.div>
         </Section>
       </Layout>
@@ -158,254 +163,346 @@ export default function Horario() {
 
   return (
     <Layout>
-      <Section>
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <div className="flex justify-center mb-6">
-            <Calendar className="text-primary" size={64} />
-          </div>
-          <h1 className="text-5xl md:text-4xl font-bold mb-4">
-            Horario de <span className="text-gradient">Clases</span>
-          </h1>
-          <p className="text-xl text-light/70 max-w-2xl mx-auto">
-            Encuentra el horario perfecto para ti. Todas las clases incluyen coaching profesional.
-          </p>
-        </motion.div>
+      <div className="relative bg-gray-950 text-white overflow-hidden py-16">
+        {/* Background glow effects */}
+        <div className="absolute top-1/4 left-1/10 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/10 w-[500px] h-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay pointer-events-none" />
 
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-4 mb-8 p-4 bg-primary/5 rounded-xl border border-white/10"
-        >
-          <div className="flex items-center gap-2 text-light/70 mr-2">
-            <Filter size={18} />
-            <span className="font-medium">Filtrar por:</span>
-          </div>
-
-          {/* Time Filter */}
-          <div className="flex gap-2">
-            <Button 
-              variant={filterTime === 'AM' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setFilterTime(filterTime === 'AM' ? null : 'AM')}
-              className={filterTime === 'AM' ? "bg-primary text-dark hover:bg-primary/90" : ""}
-            >
-              Mañana (AM)
-            </Button>
-            <Button 
-              variant={filterTime === 'PM' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => setFilterTime(filterTime === 'PM' ? null : 'PM')}
-              className={filterTime === 'PM' ? "bg-primary text-dark hover:bg-primary/90" : ""}
-            >
-              Tarde (PM)
-            </Button>
-          </div>
-
-          <div className="h-6 w-px bg-white/10 hidden md:block"></div>
-
-          {/* Type Filter */}
-          <select 
-            className="bg-secondary/50 border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:border-primary outline-none min-w-[180px]"
-            value={filterType || ''}
-            onChange={(e) => setFilterType(e.target.value || null)}
+        <Section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
           >
-            <option value="">Todas las clases</option>
-            {classTypes.map(type => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-          
-          {/* Clear Button */}
-          {(filterType || filterTime) && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => { setFilterType(null); setFilterTime(null); }}
-              className="text-light/50 hover:text-white ml-2"
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-primary/10 border border-primary/20 text-primary">
+                <Calendar size={36} className="animate-pulse" />
+              </div>
+            </div>
+            <h1 
+              className="text-5xl md:text-7xl font-black tracking-wider uppercase mb-4"
+              style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}
             >
-              <X size={14} className="mr-1" />
-              Limpiar
-            </Button>
-          )}
-        </motion.div>
+              Horario de <span className="text-gradient drop-shadow-[0_0_15px_rgba(212,160,23,0.2)]">Clases</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
+              Encuentra el momento perfecto para tu entrenamiento. Todas las clases están guiadas por coaches certificados.
+            </p>
+          </motion.div>
 
-        {/* Legend */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap justify-center gap-6 mb-8"
-        >
-          <LegendItem color="bg-success" label="Principiantes" icon="🟢" />
-          <LegendItem color="bg-amber-500" label="Intermedio" icon="🟡" />
-          <LegendItem color="bg-red-500" label="Avanzado" icon="🔴" />
-        </motion.div>
+          {/* Controls Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col lg:flex-row flex-wrap justify-between items-center gap-6 mb-12 p-6 bg-zinc-900/30 backdrop-blur-md border border-white/5 rounded-none"
+          >
+            <div className="flex items-center gap-3 text-gray-400">
+              <Filter size={16} className="text-primary" />
+              <span className="text-xs font-black uppercase tracking-wider">Centro de Control</span>
+            </div>
 
-        {/* Desktop Schedule - Grid View */}
-        <div className="hidden lg:block overflow-x-auto mb-8">
-          <div className="bg-primary/5 rounded-md border border-white/10 p-6 min-w-[900px]">
-            {allTimeSlots.length > 0 ? (
-              <div className="grid grid-cols-8 gap-3 relative">
-                {/* Current Day Highlight Column */}
-                {highlightedDay && (
-                  <div 
-                    className="bg-primary/5 rounded-2xl pointer-events-none absolute"
-                    style={{
-                      gridColumn: daysOrder.indexOf(highlightedDay) + 2,
-                      gridRow: '1 / -1',
-                      zIndex: 0,
-                    }}
-                  />
-                )}
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+              {/* Time Sliding Selector */}
+              <div className="flex bg-white/5 border border-white/10 p-1 rounded-none w-full sm:w-auto">
+                <button
+                  onClick={() => setFilterTime(null)}
+                  className={`flex-1 sm:flex-initial px-5 py-2 text-center text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    filterTime === null 
+                      ? "bg-primary text-dark" 
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Todo el día
+                </button>
+                <button
+                  onClick={() => setFilterTime('AM')}
+                  className={`flex-1 sm:flex-initial px-5 py-2 text-center text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    filterTime === 'AM' 
+                      ? "bg-primary text-dark" 
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Mañana (AM)
+                </button>
+                <button
+                  onClick={() => setFilterTime('PM')}
+                  className={`flex-1 sm:flex-initial px-5 py-2 text-center text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    filterTime === 'PM' 
+                      ? "bg-primary text-dark" 
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Tarde (PM)
+                </button>
+              </div>
 
-                {/* Header */}
-                <div className="font-bold text-center flex items-center justify-center sticky top-0 bg-dark/80 backdrop-blur-sm z-10">
-                  <Clock className="text-primary" size={20} />
+              {/* Class Type Selector */}
+              <div className="relative w-full sm:w-auto min-w-[200px]">
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-none px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white focus:border-primary outline-none appearance-none cursor-pointer pr-10"
+                  value={filterType || ''}
+                  onChange={(e) => setFilterType(e.target.value || null)}
+                >
+                  <option value="" className="bg-zinc-950 text-white">Todas las clases</option>
+                  {classTypes.map(type => (
+                    <option key={type} value={type} className="bg-zinc-950 text-white">{type}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                  <ChevronRight size={14} className="rotate-90" />
                 </div>
-                {filteredSchedule.map((day) => (
-                  <div
-                    key={day.day}
-                    className={`font-bold text-center text-sm py-2 rounded-lg transition-colors ${
-                      highlightedDay === day.day 
-                        ? 'bg-primary/20 text-primary' 
-                        : 'text-light/70'
-                    }`}
-                  >
-                    {day.day}
-                    {highlightedDay === day.day && (
-                      <div className="text-[10px] text-primary/70">Hoy</div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Time slots */}
-                {allTimeSlots.map((time) => (
-                  <div key={time} className="contents">
-                    <div className="text-sm font-semibold text-light/70 text-right py-3 border-t border-white/10 flex items-center justify-end pr-2">
-                      {time}
-                    </div>
-                    {filteredSchedule.map((day) => {
-                      const classAtTime = day.classes.find((c) => c.time === time);
-                      return (
-                        <div 
-                          key={`${day.day}-${time}`} 
-                          className="py-2 border-t border-white/10 min-h-[80px] flex items-center transition-colors"
-                        >
-                          {classAtTime ? (
-                            <InteractiveClassBadge 
-                              classData={classAtTime} 
-                              day={day.day}
-                              onClick={() => setSelectedClass({ ...classAtTime, day: day.day })}
-                            />
-                          ) : (
-                            <div className="h-full w-full"></div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
               </div>
-            ) : (
-              <div className="text-center py-12 text-light/50">
-                <p className="text-lg">No se encontraron clases con los filtros seleccionados.</p>
-                <Button 
-                  variant="link" 
+
+              {/* Clear Button */}
+              {(filterType || filterTime) && (
+                <button 
                   onClick={() => { setFilterType(null); setFilterTime(null); }}
-                  className="mt-2 text-primary"
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest text-primary hover:text-primary-600 transition-colors whitespace-nowrap"
                 >
-                  Limpiar filtros
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+                  <X size={12} />
+                  Limpiar Filtros
+                </button>
+              )}
+            </div>
+          </motion.div>
 
-        {/* Mobile Schedule - List View */}
-        <div className="lg:hidden space-y-4">
-          {filteredSchedule.some(day => day.classes.length > 0) ? (
-            filteredSchedule.map((day, dayIndex) => (
-              day.classes.length > 0 && (
-                <motion.div
-                  key={day.day}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: dayIndex * 0.05 }}
-                  className={`card p-6 ${highlightedDay === day.day ? 'ring-2 ring-primary/50' : ''}`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-primary">{day.day}</h3>
-                    {highlightedDay === day.day && (
-                      <Badge variant="accent">Hoy</Badge>
-                    )}
+          {/* Legend */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-4 mb-10"
+          >
+            <LegendItem color="bg-success" label="Principiantes" />
+            <LegendItem color="bg-amber-500" label="Intermedio" />
+            <LegendItem color="bg-red-500" label="Avanzado / RX" />
+          </motion.div>
+
+          {/* Desktop Schedule - Weekly Planner Grid */}
+          <div className="hidden lg:block overflow-x-auto mb-16 border border-white/5 bg-zinc-900/10 backdrop-blur-md">
+            <div className="min-w-[1000px] p-6 relative">
+              {allTimeSlots.length > 0 ? (
+                <div className="grid grid-cols-8 gap-3.5 relative z-10">
+                  {/* Current Day Column Highlight Box */}
+                  {highlightedDay && daysOrder.includes(highlightedDay) && (
+                    <div 
+                      className="bg-primary/[0.02] border-x border-primary/10 pointer-events-none absolute"
+                      style={{
+                        gridColumn: daysOrder.indexOf(highlightedDay) + 2,
+                        gridRow: '1 / -1',
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+
+                  {/* Header row */}
+                  <div className="h-12 border-b border-white/10 flex items-center justify-center bg-zinc-900/40">
+                    <Clock className="text-primary" size={16} />
                   </div>
-                  <div className="space-y-3">
-                    {day.classes.map((cls, idx) => (
+                  {filteredSchedule.map((day) => {
+                    const isToday = highlightedDay === day.day;
+                    return (
                       <div
-                        key={idx}
-                        onClick={() => setSelectedClass({ ...cls, day: day.day })}
-                        className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-lg cursor-pointer transition-colors group"
+                        key={day.day}
+                        className={`h-12 border-b flex flex-col items-center justify-center text-center transition-colors relative ${
+                          isToday 
+                            ? 'border-primary bg-primary/10 text-primary' 
+                            : 'border-white/10 bg-zinc-900/40 text-gray-300'
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 min-w-[60px]">
-                            <Clock size={16} className="text-primary" />
-                            <span className="font-semibold">{cls.time}</span>
-                          </div>
-                          <div>
-                            <ClassBadge name={cls.name} type={cls.type} />
-                            {cls.level && (
-                              <div className="text-xs text-light/50 mt-1">{cls.level}</div>
+                        <span className="text-xs font-black uppercase tracking-widest">{day.day}</span>
+                        {isToday && (
+                          <span className="text-[9px] font-black uppercase tracking-widest text-primary/70 mt-0.5">Hoy</span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Time rows */}
+                  {allTimeSlots.map((time) => (
+                    <div key={time} className="contents">
+                      <div className="text-xs font-black font-mono text-gray-400 text-right py-4 border-r border-white/5 pr-4 flex items-center justify-end h-full">
+                        {time}
+                      </div>
+                      {filteredSchedule.map((day) => {
+                        const classAtTime = day.classes.find((c) => c.time === time);
+                        return (
+                          <div 
+                            key={`${day.day}-${time}`} 
+                            className={`py-2 border-b border-white/5 min-h-[95px] flex items-center transition-colors duration-300 ${
+                              highlightedDay === day.day ? "bg-primary/[0.01]" : ""
+                            }`}
+                          >
+                            {classAtTime ? (
+                              <InteractiveClassBadge 
+                                classData={classAtTime} 
+                                day={day.day}
+                                onClick={() => setSelectedClass({ ...classAtTime, day: day.day })}
+                              />
+                            ) : (
+                              <div className="h-full w-full"></div>
                             )}
                           </div>
-                        </div>
-                        <Info size={16} className="text-light/30 group-hover:text-primary transition-colors" />
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )
-            ))
-          ) : (
-            <div className="text-center py-12 text-light/50 card">
-              <p className="text-lg">No se encontraron clases con los filtros seleccionados.</p>
-              <Button 
-                variant="link" 
-                onClick={() => { setFilterType(null); setFilterTime(null); }}
-                className="mt-2 text-primary"
-              >
-                Limpiar filtros
-              </Button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 text-gray-500 relative z-10">
+                  <p className="text-sm uppercase tracking-widest font-bold">No se encontraron clases para los filtros aplicados</p>
+                  <button 
+                    onClick={() => { setFilterType(null); setFilterTime(null); }}
+                    className="mt-3 text-xs text-primary font-black uppercase tracking-widest hover:underline"
+                  >
+                    Restablecer Filtros
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Info Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-12 bg-gradient-to-br from-secondary/30 to-primary/10 rounded-2xl p-8 text-center"
-        >
-          <div className="flex justify-center mb-4">
-            <Zap className="text-primary" size={48} />
           </div>
-          <h3 className="text-2xl font-bold mb-4">Open Gym</h3>
-          <p className="text-light/70 max-w-2xl mx-auto mb-4">
-            Acceso libre al equipamiento disponible todos los días de 08:00 a 21:00.
-            Los coaches están disponibles durante las clases programadas para consultas.
-          </p>
-          <Badge variant="accent" className="text-sm px-4 py-2">
-            Sin reserva requerida para miembros
-          </Badge>
-        </motion.div>
-      </Section>
+
+          {/* Mobile Schedule - Day Tab Switcher & List View */}
+          <div className="lg:hidden">
+            {/* Day Selector Tabs */}
+            <div className="mb-6 overflow-x-auto flex border border-white/10 bg-zinc-900/40 backdrop-blur-md p-1 scrollbar-none">
+              {daysOrder.map((day) => {
+                const isToday = highlightedDay === day;
+                const isActive = activeTab === day;
+                
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setActiveTab(day)}
+                    className={`flex-1 min-w-[70px] py-3 text-center relative transition-all duration-300 outline-none ${
+                      isActive 
+                        ? "text-dark font-black" 
+                        : "text-gray-400 font-bold hover:text-white"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeDayTab"
+                        className="absolute inset-0 bg-primary z-0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <span className="text-[10px] uppercase tracking-widest">{day.substring(0, 3)}</span>
+                      {isToday && (
+                        <span className={`text-[8px] tracking-wider uppercase ${isActive ? "text-dark/80" : "text-primary"} font-black mt-0.5`}>
+                          Hoy
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Day Class List */}
+            <div className="px-1">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  {(() => {
+                    const dayData = filteredSchedule.find(d => d.day === activeTab);
+                    if (!dayData || dayData.classes.length === 0) {
+                      return (
+                        <div className="text-center py-16 border border-white/5 bg-zinc-900/20 backdrop-blur-md">
+                          <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">No hay clases programadas</p>
+                          <p className="text-[11px] text-gray-600 mt-1 font-light">Prueba cambiando los filtros de horario o tipo.</p>
+                        </div>
+                      );
+                    }
+
+                    return dayData.classes.map((cls, idx) => {
+                      const levelBorders = {
+                        low: "border-l-success",
+                        medium: "border-l-amber-500",
+                        high: "border-l-red-500",
+                      };
+                      
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          onClick={() => setSelectedClass({ ...cls, day: activeTab })}
+                          className={`flex items-center justify-between p-5 border-y border-r border-white/5 border-l-4 bg-zinc-900/10 hover:bg-zinc-900/20 cursor-pointer transition-all duration-300 group ${
+                            levelBorders[cls.type as keyof typeof levelBorders] || "border-l-primary"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 min-w-[65px]">
+                              <Clock size={13} className="text-primary" />
+                              <span className="font-mono text-xs font-bold text-white">{cls.time}</span>
+                            </div>
+                            <div>
+                              <div className="font-black text-xs uppercase tracking-wider text-white group-hover:text-primary transition-colors">
+                                {cls.name}
+                              </div>
+                              {cls.level && (
+                                <div className="text-[9px] font-bold text-gray-500 mt-1 uppercase tracking-wider">
+                                  {cls.level}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-500 group-hover:text-primary transition-colors">
+                            {cls.coach && (
+                              <span className="text-[10px] text-gray-400 font-light hidden sm:inline">{cls.coach}</span>
+                            )}
+                            <Info size={14} />
+                          </div>
+                        </motion.div>
+                      );
+                    });
+                  })()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Info Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-16 border border-white/5 bg-gradient-to-br from-zinc-900/20 to-primary/5 p-8 text-center max-w-4xl mx-auto"
+          >
+            <div className="flex justify-center mb-4">
+              <Zap className="text-primary" size={36} />
+            </div>
+            <h3 
+              className="text-3xl font-black uppercase tracking-wider mb-3 text-white"
+              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+            >
+              Open Gym
+            </h3>
+            <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-5 leading-relaxed font-light">
+              Entrenamiento libre disponible todos los días de 08:00 a 21:00. Usa todo el equipamiento de primer nivel a tu propio ritmo.
+              Los coaches de piso están siempre presentes para consultas de seguridad.
+            </p>
+            <Badge className="bg-accent text-dark border-transparent rounded-none px-4 py-1.5 text-xs font-black tracking-widest uppercase">
+              Sin reserva previa requerida para miembros
+            </Badge>
+          </motion.div>
+        </Section>
+      </div>
 
       {/* Class Details Modal */}
       <AnimatePresence>
@@ -420,26 +517,14 @@ export default function Horario() {
   );
 }
 
-function LegendItem({ color, label, icon }: { color: string; label: string; icon: string }) {
+function LegendItem({ color, label }: { color: string; label: string }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg">
-      <span className="text-lg">{icon}</span>
-      <div className={`w-3 h-3 rounded-full ${color}`}></div>
-      <span className="text-sm font-medium">{label}</span>
-    </div>
-  );
-}
-
-function ClassBadge({ name, type }: { name: string; type: string }) {
-  const colors = {
-    low: "bg-success/20 text-success border-success/30",
-    medium: "bg-accent/20 text-accent border-accent/30",
-    high: "bg-primary/20 text-primary border-primary/30",
-  };
-
-  return (
-    <div className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold border ${colors[type as keyof typeof colors]}`}>
-      {name}
+    <div className="flex items-center gap-2.5 px-4 py-2 bg-white/5 border border-white/5 rounded-none">
+      <span className="relative flex h-2 w-2">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${color}`}></span>
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${color}`}></span>
+      </span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</span>
     </div>
   );
 }
@@ -453,22 +538,42 @@ function InteractiveClassBadge({
   day: string;
   onClick: () => void;
 }) {
-  const colors = {
-    low: "bg-success/20 text-success border-success/30 hover:bg-success/30",
-    medium: "bg-accent/20 text-accent border-accent/30 hover:bg-accent/30",
-    high: "bg-primary/20 text-primary border-primary/30 hover:bg-primary/30",
+  const borders = {
+    low: "border-l-success",
+    medium: "border-l-amber-500",
+    high: "border-l-red-500",
+  };
+  const bgColors = {
+    low: "hover:bg-success/10 bg-success/5 border-success/10",
+    medium: "hover:bg-amber-500/10 bg-amber-500/5 border-amber-500/10",
+    high: "hover:bg-red-500/10 bg-red-500/5 border-red-500/10",
   };
 
   return (
     <button
       onClick={onClick}
-      className={`w-full px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-        colors[classData.type as keyof typeof colors]
+      className={`w-full h-full p-3 border-l-4 rounded-none text-left transition-all duration-300 cursor-pointer flex flex-col justify-between group/cell ${
+        borders[classData.type as keyof typeof borders] || "border-l-primary"
+      } ${
+        bgColors[classData.type as keyof typeof bgColors] || "bg-primary/5 hover:bg-primary/10 border-primary/10"
       }`}
     >
-      <div className="truncate">{classData.name}</div>
-      {classData.level && (
-        <div className="text-[10px] opacity-70 truncate mt-0.5">{classData.level}</div>
+      <div>
+        <div className="font-black text-[10px] tracking-wider uppercase text-white truncate group-hover/cell:text-primary transition-colors">
+          {classData.name}
+        </div>
+        {classData.level && (
+          <div className="text-[9px] font-bold tracking-wider uppercase text-gray-500 mt-1 truncate">
+            {classData.level}
+          </div>
+        )}
+      </div>
+      
+      {classData.coach && (
+        <div className="text-[9px] text-gray-400 font-light truncate mt-2 flex items-center gap-1">
+          <span className="w-1 h-1 rounded-full bg-white/40" />
+          {classData.coach}
+        </div>
       )}
     </button>
   );
@@ -487,60 +592,85 @@ function ClassDetailsModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         onClick={(e) => e.stopPropagation()}
-        className="card p-8 max-w-md w-full"
+        className="relative bg-zinc-950 border border-white/10 max-w-md w-full p-8 rounded-none overflow-hidden"
       >
-        <div className="text-center mb-6">
-          <div className="inline-block px-4 py-1 bg-primary/20 text-primary rounded-full text-sm font-semibold mb-4">
+        {/* Top gold bar */}
+        <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-primary to-accent" />
+        
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-5 right-5 text-gray-500 hover:text-white hover:rotate-90 transition-all duration-300 cursor-pointer"
+        >
+          <X size={20} />
+        </button>
+
+        <div className="text-center mb-8 pt-4">
+          <span className="inline-block px-3.5 py-1.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black tracking-widest uppercase mb-4">
             {classData.day} • {classData.time}
-          </div>
-          <h2 className="text-3xl font-bold mb-2">{classData.name}</h2>
+          </span>
+          <h2 
+            className="text-4xl font-black uppercase tracking-wider text-white"
+            style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+          >
+            {classData.name}
+          </h2>
         </div>
 
         <div className="space-y-4">
           {classData.level && (
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
-              <Zap className="text-primary flex-shrink-0" size={20} />
+            <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/5">
+              <div className="p-2.5 bg-primary/10 text-primary">
+                <Zap size={18} />
+              </div>
               <div>
-                <div className="text-xs text-light/50">Nivel</div>
-                <div className="font-semibold">{classData.level}</div>
+                <div className="text-[9px] font-black tracking-wider uppercase text-gray-500">Nivel de Intensidad</div>
+                <div className="text-xs font-bold text-white uppercase tracking-wide">{classData.level}</div>
               </div>
             </div>
           )}
 
           {classData.coach && (
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
-              <User className="text-primary flex-shrink-0" size={20} />
+            <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/5">
+              <div className="p-2.5 bg-primary/10 text-primary">
+                <User size={18} />
+              </div>
               <div>
-                <div className="text-xs text-light/50">Coach</div>
-                <div className="font-semibold">{classData.coach}</div>
+                <div className="text-[9px] font-black tracking-wider uppercase text-gray-500">Coach</div>
+                <div className="text-xs font-bold text-white uppercase tracking-wide">{classData.coach}</div>
               </div>
             </div>
           )}
 
           {classData.capacity && (
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
-              <Users className="text-primary flex-shrink-0" size={20} />
+            <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/5">
+              <div className="p-2.5 bg-primary/10 text-primary">
+                <Users size={18} />
+              </div>
               <div>
-                <div className="text-xs text-light/50">Capacidad Máxima</div>
-                <div className="font-semibold">{classData.capacity} personas</div>
+                <div className="text-[9px] font-black tracking-wider uppercase text-gray-500">Capacidad Máxima</div>
+                <div className="text-xs font-bold text-white uppercase tracking-wide">{classData.capacity} personas</div>
               </div>
             </div>
           )}
         </div>
 
-        <button
+        {/* CTA to reservation page */}
+        <Link
+          to={`/contacto?clase=${encodeURIComponent(classData.name)}&dia=${encodeURIComponent(classData.day)}&hora=${encodeURIComponent(classData.time)}`}
           onClick={onClose}
-          className="w-full mt-6 px-6 py-3 bg-primary hover:bg-primary/90 text-dark font-semibold rounded-lg transition-colors"
+          className="w-full mt-8 py-4 bg-primary text-dark hover:bg-primary-600 font-black text-xs tracking-widest uppercase transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 rounded-none"
         >
-          Cerrar
-        </button>
+          Reservar esta Clase
+          <ArrowRight size={14} />
+        </Link>
       </motion.div>
     </motion.div>
   );

@@ -3,11 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { Save, RefreshCw, CheckCircle, Tv, Coins, Layers, Clock } from "lucide-react";
 
-interface SettingsManagerProps {
-  sessionToken: string | null;
-}
-
-export function SettingsManager({ sessionToken }: SettingsManagerProps) {
+export function SettingsManager() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,9 +37,9 @@ export function SettingsManager({ sessionToken }: SettingsManagerProps) {
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionToken || localStorage.getItem("admin_session")}`,
         },
         body: JSON.stringify(settings),
       });

@@ -76,7 +76,6 @@ const API_URL = '';
 export default function Admin() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [session, setSession] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -118,20 +117,10 @@ export default function Admin() {
       setActiveSection(tabParam);
     }
 
-    const sessionToken = searchParams.get('session');
-    if (sessionToken) {
-      setSession(sessionToken);
-      localStorage.setItem('admin_session', sessionToken);
-      checkSession(sessionToken);
-    } else {
-      const storedSession = localStorage.getItem('admin_session');
-      if (storedSession) {
-        setSession(storedSession);
-        checkSession(storedSession);
-      } else {
-        setLoading(false);
-      }
-    }
+    // Session is now managed via HttpOnly cookie — just verify with the server
+    // Also clean up any legacy localStorage sessions
+    localStorage.removeItem('admin_session');
+    checkSession();
   }, [searchParams]);
 
   // Mobile detection and responsive view mode
@@ -173,18 +162,20 @@ export default function Admin() {
     }
   }, [authenticated]);
 
-  const checkSession = async (sessionToken: string) => {
+  // Session is carried via HttpOnly cookie — no token needed in JS
+  const checkSession = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/session?session=${sessionToken}`);
+      const response = await fetch(`${API_URL}/api/auth/session`, {
+        credentials: 'include', // send the HttpOnly cookie
+      });
       if (response.ok) {
         setAuthenticated(true);
-        loadSchedules(sessionToken);
-        loadClassTypes(sessionToken);
-        loadStudents(sessionToken);
-        loadPlans(sessionToken);
+        loadSchedules();
+        loadClassTypes();
+        loadStudents();
+        loadPlans();
       } else {
         setAuthenticated(false);
-        localStorage.removeItem('admin_session');
       }
     } catch (error) {
       console.error('Session check failed:', error);
@@ -194,12 +185,10 @@ export default function Admin() {
     }
   };
 
-  const loadSchedules = async (sessionToken: string) => {
+  const loadSchedules = async () => {
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json() as ClassSchedule[];
@@ -210,12 +199,10 @@ export default function Admin() {
     }
   };
 
-  const loadClassTypes = async (sessionToken: string) => {
+  const loadClassTypes = async () => {
     try {
       const response = await fetch(`${API_URL}/api/admin/class-types`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json() as ClassType[];
@@ -227,20 +214,15 @@ export default function Admin() {
   };
 
   const handleLogin = () => {
+    // Direct navigation to the login route which sets the HttpOnly cookie
     window.location.href = `${API_URL}/api/auth/login`;
   };
 
   const handleLogout = async () => {
-    if (session) {
-      await fetch(`${API_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-        },
-      });
-    }
-    localStorage.removeItem('admin_session');
-    setSession(null);
+    await fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include', // clears the HttpOnly cookie server-side
+    });
     setAuthenticated(false);
     navigate('/');
   };
@@ -251,20 +233,18 @@ export default function Admin() {
   };
 
   const handleSave = async () => {
-    if (!session || !editingId) return;
+    if (!editingId) return;
 
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule/${editingId}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
 
       if (response.ok) {
-        await loadSchedules(session);
+        await loadSchedules();
         setEditingId(null);
         setEditForm({});
       }
@@ -274,18 +254,16 @@ export default function Admin() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!session || !confirm('¿Estás seguro de eliminar este horario?')) return;
+    if (!confirm('¿Estás seguro de eliminar este horario?')) return;
 
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        await loadSchedules(session);
+        await loadSchedules();
       }
     } catch (error) {
       console.error('Failed to delete schedule:', error);
@@ -293,20 +271,16 @@ export default function Admin() {
   };
 
   const handleAdd = async () => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
 
       if (response.ok) {
-        await loadSchedules(session);
+        await loadSchedules();
         setShowAddForm(false);
         setEditForm({});
       }
@@ -322,20 +296,16 @@ export default function Admin() {
   };
 
   const handleToggleActive = async (schedule: ClassSchedule) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule/${schedule.id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...schedule, isActive: !schedule.isActive }),
       });
 
       if (response.ok) {
-        await loadSchedules(session);
+        await loadSchedules();
       }
     } catch (error) {
       console.error('Failed to toggle active status:', error);
@@ -349,7 +319,7 @@ export default function Admin() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || !session) {
+    if (!over) {
       setActiveId(null);
       return;
     }
@@ -364,10 +334,8 @@ export default function Admin() {
       try {
         const response = await fetch(`${API_URL}/api/admin/schedule/${active.id}`, {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${session}`,
-            'Content-Type': 'application/json',
-          },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...activeSchedule,
             dayOfWeek: day,
@@ -376,7 +344,7 @@ export default function Admin() {
         });
 
         if (response.ok) {
-          await loadSchedules(session);
+          await loadSchedules();
         }
       } catch (error) {
         console.error('Failed to update schedule:', error);
@@ -388,20 +356,16 @@ export default function Admin() {
 
   // ==================== CLASS TYPES CRUD ====================
   const handleAddClassType = async (classType: Partial<ClassType>) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/class-types`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(classType),
       });
 
       if (response.ok) {
-        await loadClassTypes(session);
+        await loadClassTypes();
       }
     } catch (error) {
       console.error('Failed to add class type:', error);
@@ -409,20 +373,16 @@ export default function Admin() {
   };
 
   const handleUpdateClassType = async (id: number, classType: Partial<ClassType>) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/class-types/${id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(classType),
       });
 
       if (response.ok) {
-        await loadClassTypes(session);
+        await loadClassTypes();
       }
     } catch (error) {
       console.error('Failed to update class type:', error);
@@ -430,18 +390,14 @@ export default function Admin() {
   };
 
   const handleDeleteClassType = async (id: number) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/class-types/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        await loadClassTypes(session);
+        await loadClassTypes();
       }
     } catch (error) {
       console.error('Failed to delete class type:', error);
@@ -449,12 +405,10 @@ export default function Admin() {
   };
 
   // ==================== STUDENTS CRUD ====================
-  const loadStudents = async (sessionToken: string) => {
+  const loadStudents = async () => {
     try {
       const response = await fetch(`${API_URL}/api/admin/students`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json() as Student[];
@@ -466,20 +420,16 @@ export default function Admin() {
   };
 
   const handleAddStudent = async (student: Partial<Student>) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/students`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(student),
       });
 
       if (response.ok) {
-        await loadStudents(session);
+        await loadStudents();
       }
     } catch (error) {
       console.error('Failed to add student:', error);
@@ -487,20 +437,16 @@ export default function Admin() {
   };
 
   const handleUpdateStudent = async (id: number, student: Partial<Student>) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/students/${id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(student),
       });
 
       if (response.ok) {
-        await loadStudents(session);
+        await loadStudents();
       }
     } catch (error) {
       console.error('Failed to update student:', error);
@@ -508,18 +454,14 @@ export default function Admin() {
   };
 
   const handleDeleteStudent = async (id: number) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/students/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        await loadStudents(session);
+        await loadStudents();
       }
     } catch (error) {
       console.error('Failed to delete student:', error);
@@ -527,12 +469,10 @@ export default function Admin() {
   };
 
   // ==================== PLANS CRUD ====================
-  const loadPlans = async (sessionToken: string) => {
+  const loadPlans = async () => {
     try {
       const response = await fetch(`${API_URL}/api/admin/plans`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
@@ -544,20 +484,16 @@ export default function Admin() {
   };
 
   const handleAddPlan = async (plan: any) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/plans`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(plan),
       });
 
       if (response.ok) {
-        await loadPlans(session);
+        await loadPlans();
       }
     } catch (error) {
       console.error('Failed to add plan:', error);
@@ -565,20 +501,16 @@ export default function Admin() {
   };
 
   const handleUpdatePlan = async (id: number, plan: any) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/plans/${id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(plan),
       });
 
       if (response.ok) {
-        await loadPlans(session);
+        await loadPlans();
       }
     } catch (error) {
       console.error('Failed to update plan:', error);
@@ -586,18 +518,14 @@ export default function Admin() {
   };
 
   const handleDeletePlan = async (id: number) => {
-    if (!session) return;
-
     try {
       const response = await fetch(`${API_URL}/api/admin/plans/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        await loadPlans(session);
+        await loadPlans();
       }
     } catch (error) {
       console.error('Failed to delete plan:', error);
@@ -1034,7 +962,7 @@ export default function Admin() {
 
         {/* Settings Section */}
         {activeSection === 'settings' && (
-          <SettingsManager sessionToken={session} />
+          <SettingsManager />
         )}
       </Section>
     </Layout>
