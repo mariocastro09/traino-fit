@@ -15,6 +15,8 @@ type Bindings = {
   ADMIN_EMAILS: string;
   FRONTEND_URL?: string;
   RESEND_API_KEY?: string;
+  HF_TOKEN?: string;
+  HUGGINGFACE_TOKEN?: string;
 };
 
 // ─────────────────────────────────────────────
@@ -787,6 +789,130 @@ app.post('/api/leads', async (c) => {
     return c.json({ success: true });
   } catch (err: any) {
     console.error("Error in /api/leads:", err);
+    return c.json({ error: err.message || "Internal server error" }, 500);
+  }
+});
+
+// ISO 27001 A.9.4 — Admin-only AI assistant endpoint (internal tool)
+app.post('/api/assistant', requireAdmin, async (c) => {
+  try {
+    const { message, history = [] } = await c.req.json();
+    if (!message) {
+      return c.json({ error: "Message is required" }, 400);
+    }
+
+    const db = drizzle(c.env.DB, { schema });
+
+    // Fetch all routines from the DB
+    const dbRoutines = await db.select().from(schema.routines).all();
+
+    // Build routines context string
+    const routinesContext = dbRoutines.map(r =>
+      `- **${r.routineName}** | ${r.exerciseName}: ${r.sets} series x ${r.reps} reps (${r.intensityPct ? r.intensityPct + '%' : 'N/A'} int.) - ${r.difficulty}. *Técnica:* ${r.description || 'Sin descripción'}`
+    ).join('\n');
+
+    // Fetch token from settings or environment
+    const hfTokenSetting = await db.select()
+      .from(schema.settings)
+      .where(eq(schema.settings.key, 'HF_TOKEN'))
+      .get();
+
+    const token = c.env.HF_TOKEN || c.env.HUGGINGFACE_TOKEN || hfTokenSetting?.value;
+
+    if (token) {
+      try {
+        // 1. Use the new centralized Hugging Face router URL
+        const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // 2. The router will use this field to direct your request
+            model: "Qwen/Qwen2.5-7B-Instruct",
+            messages: [
+              {
+                role: "system",
+                content: `Eres un Coach y Entrenador de CrossFit certificado y experto de TrainoFit. Tu objetivo es asesorar a los alumnos en español sobre entrenamientos, responder dudas y recomendar rutinas de forma profesional y altamente motivadora.
+
+Aquí tienes la base de datos de rutinas oficiales cargadas en el sistema de TrainoFit:
+${routinesContext}
+
+Instrucciones:
+1. Responde de forma clara, con estructura de viñetas cuando sea apropiado.
+2. Si te piden una rutina o entrenamiento, recomienda una de las rutinas oficiales que mejor se adapte al nivel del usuario (Principiante, Intermedio, Avanzado).
+3. Si el usuario pregunta cosas generales de salud o fitness, responde con entusiasmo de coach de CrossFit, enfatizando la técnica y la constancia.`
+              },
+              ...history.slice(-6),
+              {
+                role: "user",
+                content: message
+              }
+            ],
+            max_tokens: 500,
+            temperature: 0.7
+          })
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            choices?: Array<{
+              message?: {
+                content?: string;
+              };
+            }>;
+          };
+
+          const aiText = data.choices?.[0]?.message?.content;
+
+          if (aiText) {
+            return c.json({ text: aiText, source: "huggingface" });
+          }
+        } else {
+          console.error("Hugging Face API returned error status:", response.status, await response.text());
+        }
+      } catch (apiErr) {
+        console.error("Failed to fetch from Hugging Face Inference API:", apiErr);
+      }
+    }
+
+    // Local Fallback Responder (always works, zero external dependency!)
+    const normMsg = message.toLowerCase();
+    let responseText = "";
+
+    if (normMsg.includes("fuerza") || normMsg.includes("pierna") || normMsg.includes("squat") || normMsg.includes("sentadilla")) {
+      const legRoutines = dbRoutines.filter(r => r.routineName.includes("Piernas"));
+      responseText = `💪 **Recomendación del Coach:** Te sugiero nuestra rutina de **Fuerza y Potencia de Piernas** (Avanzado):\n\n` +
+        legRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} (${r.intensityPct}% 1RM). *Técnica:* ${r.description}`).join('\n') +
+        `\n\n*Consejo:* Calienta bien las articulaciones antes de iniciar los levantamientos y mantén el abdomen activo. ¡A darle con todo!`;
+    } else if (normMsg.includes("metab") || normMsg.includes("cardio") || normMsg.includes("wod") || normMsg.includes("burpee") || normMsg.includes("murph")) {
+      const cardRoutines = dbRoutines.filter(r => r.routineName.includes("Metabólico") || r.routineName.includes("Murph"));
+      responseText = `⚡ **WOD Recomendado por el Coach:** Te sugiero nuestra rutina de **Acondicionamiento Metabólico**:\n\n` +
+        cardRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} reps. ${r.description}`).join('\n') +
+        `\n\n*Consejo:* Regula el ritmo desde el inicio, este tipo de entrenamientos requiere una intensidad sostenida. ¡No te rindas!`;
+    } else if (normMsg.includes("empuje") || normMsg.includes("pecho") || normMsg.includes("hombro") || normMsg.includes("press")) {
+      const pushRoutines = dbRoutines.filter(r => r.routineName.includes("Empuje"));
+      responseText = `🔥 **Recomendación de Fuerza Superior:** Aquí tienes la rutina de **Fuerza de Empuje Superior** (Intermedio/Avanzado):\n\n` +
+        pushRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} reps. *Foco:* ${r.description}`).join('\n') +
+        `\n\n*Consejo:* Mantén el core firme y evita usar impulso de piernas en el press militar para maximizar la tensión en los hombros.`;
+    } else {
+      responseText = `👋 ¡Hola! Soy tu Coach Virtual de **TrainoFit**.\n\nPregúntame sobre rutinas de entrenamiento, ejercicios o consejos para mejorar tu técnica. Aquí tienes algunas de nuestras rutinas destacadas:\n\n` +
+        `- **Fuerza de Piernas** (Sentadillas y Peso Muerto a alta intensidad)\n` +
+        `- **Acondicionamiento Metabólico** (Burpees, Kettlebell Swings y saltos dobles)\n` +
+        `- **Fuerza de Empuje Superior** (Banca plana y Press Militar)\n` +
+        `- **WOD Murph Adaptado** (Dominadas, Flexiones y Sentadillas)\n\n` +
+        `¿Cuál te gustaría detallar o qué nivel buscas hoy? (Principiante / Intermedio / Avanzado)`;
+    }
+
+    return c.json({
+      text: responseText,
+      source: "local",
+      tip: token ? undefined : "Puedes configurar tu token de Hugging Face (`HF_TOKEN`) en el panel de administrador para activar la IA completa."
+    });
+
+  } catch (err: any) {
+    console.error("Error in /api/assistant:", err);
     return c.json({ error: err.message || "Internal server error" }, 500);
   }
 });

@@ -107,6 +107,19 @@ export const auditLog = sqliteTable('audit_log', {
   createdAt: text('created_at').notNull(),
 });
 
+export const routines = sqliteTable('routines', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  routineName: text('routine_name').notNull(),
+  exerciseName: text('exercise_name').notNull(),
+  description: text('description'),
+  sets: integer('sets').notNull(),
+  reps: text('reps').notNull(),
+  intensityPct: integer('intensity_pct'),
+  difficulty: text('difficulty').notNull(), // 'Principiante', 'Intermedio', 'Avanzado'
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 export type Admin = typeof admins.$inferSelect;
 export type NewAdmin = typeof admins.$inferInsert;
 export type ClassType = typeof classTypes.$inferSelect;
@@ -123,4 +136,6 @@ export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
 export type RateLimit = typeof rateLimits.$inferSelect;
 export type AuditLogEntry = typeof auditLog.$inferSelect;
+export type Routine = typeof routines.$inferSelect;
+export type NewRoutine = typeof routines.$inferInsert;
 

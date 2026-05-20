@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Save, RefreshCw, CheckCircle, Tv, Coins, Layers, Clock } from "lucide-react";
+import { Save, RefreshCw, CheckCircle, Tv, Coins, Layers, Clock, Bot } from "lucide-react";
 
 export function SettingsManager() {
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -76,6 +76,7 @@ export function SettingsManager() {
     { id: "precios", name: "Hero Precios", icon: Coins },
     { id: "solucion", name: "Pilares", icon: Layers },
     { id: "countdown", name: "Cuenta Regresiva", icon: Clock },
+    { id: "assistant", name: "Coach IA", icon: Bot },
   ];
 
   return (
@@ -632,6 +633,51 @@ export function SettingsManager() {
                   onChange={(e) => handleChange("waitlist_discount_text", e.target.value)}
                   placeholder="Ej: 20% OFF TU PRIMER MES"
                 />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {activeTab === "assistant" && (
+          <Card className="bg-zinc-950 border-white/5 max-w-2xl mx-auto">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                <Bot size={18} className="text-primary" />
+                Coach Virtual — Hugging Face API
+              </CardTitle>
+              <CardDescription className="text-xs text-light/50">
+                Activa el Coach Virtual con IA real. Sin token, el bot usa respuestas pregrabadas de la base de datos de rutinas igualmente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                  Token de Hugging Face (HF_TOKEN)
+                </label>
+                <input
+                  type="password"
+                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
+                  value={settings.HF_TOKEN || ""}
+                  onChange={(e) => handleChange("HF_TOKEN", e.target.value)}
+                  placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                />
+                <p className="text-[10px] text-light/40 mt-1.5 leading-relaxed">
+                  Genera un token de acceso en{" "}
+                  <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    huggingface.co/settings/tokens
+                  </a>
+                  {" "}(tipo <strong className="text-white">Read</strong>). El modelo usado es{" "}
+                  <code className="text-primary bg-white/5 px-1 py-0.5 rounded">Qwen/Qwen2.5-7B-Instruct</code>{" "}(acceso gratuito en la capa serverless).
+                </p>
+              </div>
+
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-2">
+                <p className="text-xs font-black uppercase tracking-wider text-primary">¿Cómo funciona?</p>
+                <ul className="text-[11px] text-gray-400 space-y-1.5">
+                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> El Coach lee todas las rutinas de la base de datos en tiempo real.</li>
+                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Con token activo, responde con Qwen2.5-7B (7B parámetros, contexto completo).</li>
+                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Sin token, usa el motor de reglas local con las rutinas de la DB igualmente.</li>
+                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Quotas gratuitas de Hugging Face Serverless: ~1,000 req/mes.</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
