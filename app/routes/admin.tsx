@@ -8,6 +8,7 @@ import {
   LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings, Bot
 } from "lucide-react";
 import { AIChatWidget } from "~/components/ai-chat-widget";
+import { RoutinesManager } from "~/components/admin/routines-manager";
 import {
   DndContext,
   DragOverlay,
@@ -100,6 +101,12 @@ export default function Admin() {
 
   // Plans state
   const [plans, setPlans] = useState<any[]>([]);
+
+  // Routines state trigger
+  const [routinesRefreshTrigger, setRoutinesRefreshTrigger] = useState(0);
+  const handleRoutinesUpdated = () => {
+    setRoutinesRefreshTrigger(prev => prev + 1);
+  };
 
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const timeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '10:30', '11:00', '12:00', '13:00', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
@@ -978,34 +985,21 @@ export default function Admin() {
 
         {/* Coach IA Section — ISO 27001 A.9.1: only accessible inside authenticated admin session */}
         {activeSection === 'coach' && (
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            {/* Info card */}
-            <div className="w-full lg:w-80 flex-shrink-0 p-6 rounded-2xl bg-zinc-900/60 border border-white/8">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
-                  <Bot className="text-primary" size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wider text-white">Coach IA</p>
-                  <p className="text-[10px] text-emerald-400 font-medium">Herramienta Interna</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                Usa el Coach para crear y validar rutinas antes de cargarlas a la base de datos. El agente conoce todas las rutinas existentes.
-              </p>
-              <div className="space-y-2 text-[11px] text-gray-500">
-                <p className="flex items-start gap-2"><span className="text-primary mt-0.5">▸</span> Pregunta: "Crea una rutina de fuerza de piernas avanzada"</p>
-                <p className="flex items-start gap-2"><span className="text-primary mt-0.5">▸</span> Pregunta: "¿Cuántas series recomiendas para un principiante?"</p>
-                <p className="flex items-start gap-2"><span className="text-primary mt-0.5">▸</span> Pregunta: "Diseña un WOD metabólico de 20 min"</p>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/5">
-                <p className="text-[10px] text-gray-600">Configura el token de HF en Configuración → Coach IA para activar el modelo Qwen2.5-7B.</p>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Left Column: Routines Manager */}
+            <div className="w-full">
+              <RoutinesManager 
+                onRefreshTrigger={routinesRefreshTrigger} 
+                onRoutinesUpdated={handleRoutinesUpdated} 
+              />
             </div>
 
-            {/* Chat widget embedded */}
-            <div className="flex-1 w-full">
-              <AIChatWidget embedded />
+            {/* Right Column: AI Assistant Chat */}
+            <div className="w-full">
+              <AIChatWidget 
+                embedded 
+                onRoutineSaved={handleRoutinesUpdated} 
+              />
             </div>
           </div>
         )}

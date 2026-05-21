@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { setCookie, getCookie } from 'hono/cookie';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, asc, lt } from 'drizzle-orm';
+import { eq, asc, desc, lt } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import * as schema from './db/schema';
 
@@ -834,15 +834,39 @@ app.post('/api/assistant', requireAdmin, async (c) => {
             messages: [
               {
                 role: "system",
-                content: `Eres un Coach y Entrenador de CrossFit certificado y experto de TrainoFit. Tu objetivo es asesorar a los alumnos en español sobre entrenamientos, responder dudas y recomendar rutinas de forma profesional y altamente motivadora.
+                content: `Eres un Coach y Entrenador de CrossFit certificado y experto de TrainoFit, además de asesor de bienestar físico y salud. Tu objetivo es asesorar a los alumnos en español sobre entrenamientos, responder dudas y recomendar rutinas de forma profesional, segura y altamente motivadora.
 
 Aquí tienes la base de datos de rutinas oficiales cargadas en el sistema de TrainoFit:
 ${routinesContext}
 
-Instrucciones:
-1. Responde de forma clara, con estructura de viñetas cuando sea apropiado.
-2. Si te piden una rutina o entrenamiento, recomienda una de las rutinas oficiales que mejor se adapte al nivel del usuario (Principiante, Intermedio, Avanzado).
-3. Si el usuario pregunta cosas generales de salud o fitness, responde con entusiasmo de coach de CrossFit, enfatizando la técnica y la constancia.`
+REGLAS DE VALIDACIÓN DE EJERCICIOS Y CONSEJOS MÉDICOS:
+1. Siempre prioriza la seguridad. Antes de proponer o guardar una rutina para un alumno con lesiones o condiciones de salud conocidas (ej. dolor de espalda, rodilla, hipertensión, embarazo), debes validar si el entrenamiento es seguro, dar advertencias médicas específicas (ej. evitar el esfuerzo isométrico prolongado si hay hipertensión, evitar flexiones profundas si hay dolor lumbar) y ofrecer adaptaciones/escalamientos (ej. cambiar sentadillas por sentadillas a cajón, reducir peso).
+2. Valida la estructura del ejercicio:
+   - Las series (sets) deben estar en un rango de 1 a 6 series.
+   - Las repeticiones (reps) deben ser consistentes con el objetivo (ej. 1-5 reps para fuerza máxima, 8-12 reps para hipertrofia, 15+ para resistencia, o formato AMRAP/EMOM para acondicionamiento).
+   - La intensidad porcentual (intensityPct) debe ser realista y segura para el nivel sugerido.
+3. Si el usuario te pide crear, modificar o proponer una rutina y deseas guardarla en el sistema una vez que consideres que está bien estructurada, validada y adaptada médicamente, debes generar un bloque JSON especial que el sistema interceptará para permitir su guardado.
+
+PROTOCOLO DE GUARDADO DE RUTINA (TOOL CALLING):
+Cuando consideres que la rutina está lista para ser guardada en la base de datos de TrainoFit, debes incluir al final de tu respuesta un bloque de código JSON con el siguiente formato exacto:
+\`\`\`json
+{
+  "action": "save_routine",
+  "routines": [
+    {
+      "routineName": "Nombre de la Rutina (ej. Fuerza de Piernas)",
+      "exerciseName": "Nombre del Ejercicio (ej. Back Squat)",
+      "description": "Explicación técnica detallada, ritmo, descanso y consejos de seguridad médica específicos para este ejercicio.",
+      "sets": 4,
+      "reps": "8-10",
+      "intensityPct": 75,
+      "difficulty": "Principiante" | "Intermedio" | "Avanzado"
+    }
+  ]
+}
+\`\`\`
+Puedes proponer una lista de múltiples ejercicios bajo la misma "routineName" agregando más objetos al array de "routines".
+Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha solicitado diseñarla o guardarla.`
               },
               ...history.slice(-6),
               {
@@ -850,7 +874,7 @@ Instrucciones:
                 content: message
               }
             ],
-            max_tokens: 500,
+            max_tokens: 600,
             temperature: 0.7
           })
         });
@@ -867,7 +891,30 @@ Instrucciones:
           const aiText = data.choices?.[0]?.message?.content;
 
           if (aiText) {
-            return c.json({ text: aiText, source: "huggingface" });
+            let toolCall = null;
+            let cleanedText = aiText;
+
+            // Find JSON code block matching action "save_routine"
+            const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+            const match = aiText.match(jsonRegex);
+            if (match) {
+              try {
+                const jsonParsed = JSON.parse(match[1].trim());
+                if (jsonParsed && jsonParsed.action === 'save_routine') {
+                  toolCall = jsonParsed;
+                  // Remove the JSON code block from the output text
+                  cleanedText = aiText.replace(jsonRegex, '').trim();
+                }
+              } catch (e) {
+                console.error("Failed to parse JSON tool call from AI response:", e);
+              }
+            }
+
+            return c.json({
+              text: cleanedText,
+              toolCall: toolCall,
+              source: "huggingface"
+            });
           }
         } else {
           console.error("Hugging Face API returned error status:", response.status, await response.text());
@@ -915,6 +962,78 @@ Instrucciones:
     console.error("Error in /api/assistant:", err);
     return c.json({ error: err.message || "Internal server error" }, 500);
   }
+});
+
+// ==================== ROUTINES API ====================
+
+// Admin API - Get all routines
+app.get('/api/admin/routines', requireAdmin, async (c) => {
+  const db = drizzle(c.env.DB, { schema });
+  const routinesList = await db.query.routines.findMany({
+    orderBy: [desc(schema.routines.id)],
+  });
+  return c.json(routinesList);
+});
+
+// Admin API - Create routine
+app.post('/api/admin/routines', requireAdmin, async (c) => {
+  const body = await c.req.json();
+  const db = drizzle(c.env.DB, { schema });
+
+  // Support single routine or array of routines
+  const items = Array.isArray(body) ? body : [body];
+  const createdItems = [];
+
+  for (const item of items) {
+    if (!item.routineName || !item.exerciseName || !item.sets || !item.reps || !item.difficulty) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+    const newRoutine = await db.insert(schema.routines).values({
+      routineName: item.routineName,
+      exerciseName: item.exerciseName,
+      description: item.description || '',
+      sets: parseInt(item.sets),
+      reps: String(item.reps),
+      intensityPct: item.intensityPct ? parseInt(item.intensityPct) : null,
+      difficulty: item.difficulty,
+    }).returning();
+    createdItems.push(newRoutine[0]);
+  }
+
+  return c.json(Array.isArray(body) ? createdItems : createdItems[0], 201);
+});
+
+// Admin API - Update routine
+app.put('/api/admin/routines/:id', requireAdmin, async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const { id: _id, createdAt, updatedAt, ...updateData } = await c.req.json();
+  const db = drizzle(c.env.DB, { schema });
+
+  const updated = await db.update(schema.routines)
+    .set({
+      ...updateData,
+      sets: updateData.sets ? parseInt(updateData.sets) : undefined,
+      intensityPct: updateData.intensityPct ? parseInt(updateData.intensityPct) : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.routines.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return c.json({ error: 'Routine not found' }, 404);
+  }
+
+  return c.json(updated[0]);
+});
+
+// Admin API - Delete routine
+app.delete('/api/admin/routines/:id', requireAdmin, async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const db = drizzle(c.env.DB, { schema });
+
+  await db.delete(schema.routines).where(eq(schema.routines.id, id));
+
+  return c.json({ success: true });
 });
 
 export default app;

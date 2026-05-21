@@ -1,9 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { Bot, Send, Dumbbell, Zap, RotateCcw } from "lucide-react";
+import { Button } from "~/components/ui/button";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  toolCall?: {
+    action: "save_routine";
+    routines: Array<{
+      routineName: string;
+      exerciseName: string;
+      description?: string;
+      sets: number;
+      reps: string;
+      intensityPct?: number;
+      difficulty: string;
+    }>;
+  };
+  toolSaved?: boolean;
 }
 
 function parseMarkdown(text: string): string {
@@ -28,16 +42,29 @@ const INITIAL_MSG: Message = {
   content: "👋 ¡Hola Coach! Soy tu **Asistente de Rutinas TrainoFit**.\n\nConozco todas las rutinas cargadas en la base de datos. Puedo ayudarte a diseñar nuevas rutinas, validar series/reps o responder dudas sobre entrenamiento.\n\n¿Qué rutina construimos hoy?",
 };
 
-export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
+interface AIChatWidgetProps {
+  embedded?: boolean;
+  onRoutineSaved?: () => void;
+}
+
+export function AIChatWidget({ embedded = false, onRoutineSaved }: AIChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [savingId, setSavingId] = useState<number | null>(null);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Scroll to bottom of chat body only (does not scroll window)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages, loading]);
 
   useEffect(() => {
@@ -76,7 +103,12 @@ export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
 
       const data = (await res.json()) as any;
       const reply = data.text || "Lo siento, no pude procesar tu pregunta. ¡Intenta de nuevo!";
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        content: reply,
+        toolCall: data.toolCall,
+        toolSaved: false
+      }]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -90,6 +122,35 @@ export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
   const handleReset = () => {
     setMessages([INITIAL_MSG]);
     setHasInteracted(false);
+  };
+
+  const handleSaveProposedRoutine = async (index: number, toolCallData: any) => {
+    if (!toolCallData || !toolCallData.routines) return;
+    setSavingId(index);
+    try {
+      const response = await fetch("/api/admin/routines", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toolCallData.routines),
+      });
+
+      if (response.ok) {
+        setMessages((prev) =>
+          prev.map((msg, i) => (i === index ? { ...msg, toolSaved: true } : msg))
+        );
+        if (onRoutineSaved) {
+          onRoutineSaved();
+        }
+      } else {
+        alert("Error al intentar guardar la rutina.");
+      }
+    } catch (error) {
+      console.error("Failed to save proposed routine:", error);
+      alert("Error de conexión.");
+    } finally {
+      setSavingId(null);
+    }
   };
 
   // ── Shared chat body ────────────────────────────────────
@@ -118,7 +179,10 @@ export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10"
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -137,10 +201,69 @@ export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
               }`}
             >
               {msg.role === "assistant" ? (
-                <div
-                  className="[&_strong]:text-white [&_strong]:font-bold [&_li]:flex [&_li]:items-start [&_li]:gap-1.5 [&_li]:mb-1 [&_em]:text-primary/90"
-                  dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
-                />
+                <>
+                  <div
+                    className="[&_strong]:text-white [&_strong]:font-bold [&_li]:flex [&_li]:items-start [&_li]:gap-1.5 [&_li]:mb-1 [&_em]:text-primary/90"
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}
+                  />
+                  {msg.toolCall && msg.toolCall.routines && (
+                    <div className="mt-3 p-3 rounded-xl bg-zinc-950 border border-white/8 space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2 mb-2">
+                        <span className="font-black text-primary uppercase text-[9px] tracking-wider">
+                          Rutina Propuesta
+                        </span>
+                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-white/5 text-light/75 border border-white/10">
+                          {msg.toolCall.routines[0]?.difficulty}
+                        </span>
+                      </div>
+                      
+                      <div className="font-extrabold text-white text-xs mb-1">
+                        {msg.toolCall.routines[0]?.routineName}
+                      </div>
+
+                      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                        {msg.toolCall.routines.map((routine: any, rIdx: number) => (
+                          <div key={rIdx} className="bg-white/2 p-2 rounded-lg border border-white/5">
+                            <div className="font-bold text-zinc-300 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                              {routine.exerciseName}
+                            </div>
+                            <div className="text-[9px] text-light/60 mt-1 flex gap-2 font-semibold">
+                              <span>{routine.sets} series x {routine.reps} reps</span>
+                              {routine.intensityPct && (
+                                <>
+                                  <span>•</span>
+                                  <span>{routine.intensityPct}% RM</span>
+                                </>
+                              )}
+                            </div>
+                            {routine.description && (
+                              <p className="text-[9px] text-light/40 mt-1 leading-relaxed italic">
+                                {routine.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-2">
+                        {msg.toolSaved ? (
+                          <div className="w-full text-center py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold uppercase tracking-wider text-[9px]">
+                            ✅ Guardado en Base de Rutinas
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleSaveProposedRoutine(i, msg.toolCall)}
+                            disabled={savingId !== null}
+                            className="w-full bg-primary text-white hover:bg-primary/80 transition-all font-bold uppercase tracking-wider text-[9px] h-8"
+                          >
+                            {savingId === i ? "Guardando..." : "💾 Guardar Rutina en BD"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 msg.content
               )}
@@ -160,7 +283,6 @@ export function AIChatWidget({ embedded = false }: { embedded?: boolean }) {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Starter prompts */}

@@ -11,6 +11,7 @@ assets = { directory = "./build/client/" }
 binding = "DB"
 database_name = "trainofit-db"
 database_id = "e59c04c0-05c2-4343-891b-ea543d50d480"
+migrations_dir = "drizzle/migrations"
 
 # Environment Variables (set these in Cloudflare dashboard or .dev.vars)
 # GOOGLE_CLIENT_ID
