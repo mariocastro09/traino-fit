@@ -1221,24 +1221,21 @@ export default function Admin() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowRoutinesSidebar(!showRoutinesSidebar)}
-                        className="bg-zinc-900 border-white/5 hover:bg-zinc-800 text-light/80 hover:text-white flex items-center gap-2 cursor-pointer font-bold text-[10px] uppercase tracking-wider px-3.5 py-2 rounded-xl"
+                        className="bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-light/80 hover:text-white flex items-center gap-2 cursor-pointer font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md"
                       >
-                        {showRoutinesSidebar ? (
-                          <>
-                            <span>Ocultar Base de Rutinas</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Mostrar Base de Rutinas</span>
-                          </>
-                        )}
+                        <span className="lg:inline hidden">
+                          {showRoutinesSidebar ? "Ocultar Base de Rutinas" : "Mostrar Base de Rutinas"}
+                        </span>
+                        <span className="lg:hidden inline">
+                          {showRoutinesSidebar ? "Ir al Chat" : "Ver Base de Rutinas"}
+                        </span>
                       </Button>
                     </div>
 
                     <div className={`flex-1 min-h-0 ${showRoutinesSidebar ? "grid grid-cols-1 lg:grid-cols-12 gap-5" : "flex"} items-stretch`}>
                       {/* Left: Routines Manager */}
                       {showRoutinesSidebar && (
-                        <div className="col-span-1 lg:col-span-5 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-white/8">
+                        <div className="col-span-1 lg:col-span-5 flex flex-col min-h-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 w-full lg:flex">
                           <RoutinesManager
                             onRefreshTrigger={routinesRefreshTrigger}
                             onRoutinesUpdated={handleRoutinesUpdated}
@@ -1247,7 +1244,11 @@ export default function Admin() {
                       )}
 
                       {/* Right: AI Chat — fills remaining height */}
-                      <div className={`flex flex-col min-h-0 overflow-hidden ${showRoutinesSidebar ? "col-span-1 lg:col-span-7" : "flex-1"}`}>
+                      <div className={`flex flex-col min-h-0 overflow-hidden lg:flex-1 ${
+                        showRoutinesSidebar 
+                          ? "col-span-1 lg:col-span-7 lg:flex" 
+                          : "flex-1"
+                      } ${showRoutinesSidebar ? "hidden lg:flex" : "flex"}`}>
                         <AIChatWidget
                           embedded
                           onRoutineSaved={() => {

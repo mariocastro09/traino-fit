@@ -879,6 +879,7 @@ REGLAS DE FORMATO Y REDUNDANCIA (¡CRÍTICO!):
 1. NO DETALLES la rutina completa ni listes los ejercicios en tu respuesta de texto.
 2. En su lugar, proporciona únicamente un texto de resumen/overview muy simple y breve (máximo 2-3 líneas o 1 párrafo corto) explicando el enfoque u objetivo principal de la rutina propuesta.
 3. Delega todos los detalles específicos de los ejercicios (series, repeticiones, intensidad, descanso, descripción técnica) al bloque JSON de abajo. El usuario ya verá la rutina estructurada y renderizada en tarjetas dentro de la interfaz, por lo que repetirla en el texto es redundante y satura la pantalla de forma innecesaria.
+4. Si te piden un "Ciclo de Entrenamiento de 3 días", debes diseñar un ciclo de 3 sesiones de entrenamiento distintas y complementarias. Asigna al campo 'routineName' de cada ejercicio el día al que pertenece, usando exactamente la nomenclatura: "Día 1: [Enfoque]", "Día 2: [Enfoque]" y "Día 3: [Enfoque]". Asegúrate de proponer al menos 2-3 ejercicios para cada uno de los 3 días en el array de rutinas.
 
 REGLAS DE VALIDACIÓN:
 1. Siempre prioriza la seguridad. Antes de proponer rutinas advierte sobre lesiones o condiciones de salud.
@@ -1097,6 +1098,24 @@ Genera siempre este bloque si has diseñado, modificado o propuesto una rutina.`
           intensityPct: r.intensityPct || 75,
           difficulty: r.difficulty
         }))
+      };
+    } else if (normMsg.includes("ciclo") || normMsg.includes("3 días") || normMsg.includes("split") || normMsg.includes("ppl")) {
+      responseText = `🔄 **Ciclo de Entrenamiento de 3 Días:** He estructurado un microciclo de 3 días complementarios diseñado para maximizar tus resultados. Los días están organizados en sesiones equilibradas utilizando el equipamiento disponible.`;
+      localToolCall = {
+        action: "save_routine",
+        routines: [
+          // Día 1
+          { routineName: "Día 1: Empuje (Upper Push)", exerciseName: "Press de Banca Plana", description: "Retracción escapular completa y codos a 45 grados para proteger los hombros.", sets: 4, reps: "8-10", intensityPct: 75, restSeconds: 90, difficulty: "Intermedio" },
+          { routineName: "Día 1: Empuje (Upper Push)", exerciseName: "Press Militar de Hombros", description: "Cuerpo firme, sin arquear la espalda baja, empuja directo sobre la cabeza.", sets: 3, reps: "10", intensityPct: 70, restSeconds: 60, difficulty: "Intermedio" },
+          
+          // Día 2
+          { routineName: "Día 2: Jalón (Upper Pull)", exerciseName: "Dominadas (Pull-ups)", description: "Rango de movimiento completo. Si es necesario, usa una banda elástica para asistir.", sets: 4, reps: "8", intensityPct: 65, restSeconds: 90, difficulty: "Intermedio" },
+          { routineName: "Día 2: Jalón (Upper Pull)", exerciseName: "Remo con Mancuernas", description: "Mantén el torso paralelo al suelo y lleva la mancuerna hacia tu cadera.", sets: 3, reps: "10-12", intensityPct: 70, restSeconds: 60, difficulty: "Intermedio" },
+          
+          // Día 3
+          { routineName: "Día 3: Pierna (Lower Body)", exerciseName: "Sentadilla Trasera (Back Squat)", description: "Controla la bajada, rompe el paralelo y sube con fuerza desde los talones.", sets: 4, reps: "8", intensityPct: 75, restSeconds: 120, difficulty: "Intermedio" },
+          { routineName: "Día 3: Pierna (Lower Body)", exerciseName: "Peso Muerto Rumano", description: "Enfócate en la bisagra de cadera y siente el estiramiento en los isquiotibiales.", sets: 3, reps: "10", intensityPct: 65, restSeconds: 90, difficulty: "Intermedio" }
+        ]
       };
     } else {
       responseText = `👋 ¡Hola! Soy tu Coach Virtual de **TrainoFit**.\n\nPregúntame sobre rutinas de entrenamiento, ejercicios o consejos para mejorar tu técnica. Aquí tienes algunas de nuestras rutinas destacadas:\n\n` +

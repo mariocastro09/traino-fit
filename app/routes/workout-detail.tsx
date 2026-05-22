@@ -167,6 +167,9 @@ export default function WorkoutDetail() {
   // Expanded exercise cards (mobile accordion)
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
 
+  // Active tab for multi-day cycle workouts
+  const [activeDayTab, setActiveDayTab] = useState<string | null>(null);
+
   useEffect(() => {
     if (token) fetchWorkout();
   }, [token]);
@@ -192,6 +195,15 @@ export default function WorkoutDetail() {
         // Auto-expand first exercise
         if (data.exercises.length > 0) {
           setExpandedExercises({ [data.exercises[0].id]: true });
+        }
+        
+        // Detect and initialize active day for cycle workouts
+        const routineNames = Array.from(new Set(data.exercises.map(e => e.routineName)));
+        const firstDay = routineNames.find(name => name.toLowerCase().startsWith("d\u00eda") || name.toLowerCase().startsWith("dia"));
+        if (firstDay) {
+          setActiveDayTab(firstDay);
+        } else if (routineNames.length > 0) {
+          setActiveDayTab(routineNames[0]);
         }
       } else {
         setError("El entrenamiento no existe o el enlace mágico ha expirado.");
@@ -291,9 +303,14 @@ export default function WorkoutDetail() {
     routinesMap[ex.routineName].push(ex);
   });
 
+  const routineNames = Object.keys(routinesMap);
+  const isMultiDayCycle = routineNames.some(name => name.toLowerCase().startsWith("d\u00eda") || name.toLowerCase().startsWith("dia"));
+
   // Progress
   let totalSets = 0, completedSetsCount = 0;
   workout.exercises.forEach((ex) => {
+    // If it's a multi-day cycle, only count sets of the active day
+    if (isMultiDayCycle && ex.routineName !== activeDayTab) return;
     totalSets += ex.sets;
     for (let s = 0; s < ex.sets; s++) {
       if (completedSets[`${ex.id}_${s}`]) completedSetsCount++;
@@ -414,10 +431,34 @@ export default function WorkoutDetail() {
             </div>
           </div>
 
+          {/* Cycle Day Selection Tabs (Only visible for multi-day cycles) */}
+          {isMultiDayCycle && (
+            <div className="flex gap-1.5 pb-1 overflow-x-auto scrollbar-none border-b border-white/5">
+              {routineNames.map((name) => {
+                const isActive = activeDayTab === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setActiveDayTab(name)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap cursor-pointer ${
+                      isActive
+                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/10"
+                        : "bg-zinc-900/60 border-white/5 text-light/50 hover:text-white"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Exercises by section */}
           <div className="space-y-6">
-            {Object.entries(routinesMap).map(([routineName, exercises], rIdx) => (
-              <div key={routineName} className="space-y-3">
+            {Object.entries(routinesMap)
+              .filter(([routineName]) => !isMultiDayCycle || routineName === activeDayTab)
+              .map(([routineName, exercises], rIdx) => (
+                <div key={routineName} className="space-y-3">
                 {/* Section label */}
                 <div className="flex items-center gap-3 pb-2 border-b border-white/5">
                   <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-[10px] font-black">
