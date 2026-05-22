@@ -8,4 +8,5 @@ export default [
   route("contacto", "routes/contacto.tsx"),
   route("instagram", "routes/instagram.tsx"),
   route("admin", "routes/admin.tsx"),
+  route("workout/:token", "routes/workout-detail.tsx"),
 ] satisfies RouteConfig;

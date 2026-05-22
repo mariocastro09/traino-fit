@@ -9,6 +9,7 @@ type Env = {
   SESSION_SECRET: string;
   ADMIN_EMAILS: string;
   FRONTEND_URL?: string;
+  AI?: any;
 };
 
 export type AppLoadContext = {

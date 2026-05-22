@@ -23,17 +23,26 @@ interface Student {
   membershipStartDate?: string;
   membershipEndDate?: string;
   notes?: string;
+  planId?: number;
   isActive: boolean;
+}
+
+interface Plan {
+  id: number;
+  name: string;
+  moduleName: string;
+  price: string;
 }
 
 interface StudentsManagerProps {
   students: Student[];
+  plans: Plan[];
   onAdd: (student: Partial<Student>) => Promise<void>;
   onUpdate: (id: number, student: Partial<Student>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
-export function StudentsManager({ students, onAdd, onUpdate, onDelete }: StudentsManagerProps) {
+export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: StudentsManagerProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Student>>({});
@@ -155,6 +164,11 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
                         {student.membershipType && (
                           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
                             {student.membershipType}
+                          </span>
+                        )}
+                        {student.planId && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded">
+                            Plan: {plans.find(p => p.id === student.planId)?.name || 'Cargando...'}
                           </span>
                         )}
                       </div>
@@ -333,7 +347,22 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Plan Asociado</label>
+                <select
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.planId || ''}
+                  onChange={(e) => setForm({ ...form, planId: e.target.value ? parseInt(e.target.value) : undefined })}
+                >
+                  <option value="">Ninguno</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.moduleName}) - {p.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Tipo Membresía</label>
                 <select
@@ -349,6 +378,9 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
                   <option value="Clase Única">Clase Única</option>
                 </select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha Inicio</label>
                 <input
@@ -368,7 +400,6 @@ export function StudentsManager({ students, onAdd, onUpdate, onDelete }: Student
                 />
               </div>
             </div>
-
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Notas Internas</label>
               <textarea

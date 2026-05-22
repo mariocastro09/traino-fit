@@ -66,6 +66,12 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
     setShowDialog(true);
   };
 
+  const handleOpenAddForRoutine = (routineName: string, difficulty: string) => {
+    setEditingId(null);
+    setForm({ routineName, difficulty, sets: 3, reps: "10" });
+    setShowDialog(true);
+  };
+
   const handleOpenEdit = (routine: Routine) => {
     setEditingId(routine.id);
     setForm(routine);
@@ -196,7 +202,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-white/10">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
         {loading ? (
           <div className="h-full flex items-center justify-center flex-col gap-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -211,61 +217,92 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
             </p>
           </div>
         ) : (
-          filteredRoutines.map((routine) => (
-            <div
-              key={routine.id}
-              className="group p-3 rounded-xl bg-zinc-900/40 border border-white/5 hover:border-white/10 transition-all duration-200 relative overflow-hidden"
-            >
-              <div className="flex justify-between items-start gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black uppercase text-primary tracking-wider truncate max-w-[150px]">
-                      {routine.routineName}
-                    </span>
-                    <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(routine.difficulty)}`}>
-                      {routine.difficulty}
-                    </span>
+          (() => {
+            const groupedRoutines: Record<string, { difficulty: string; items: Routine[] }> = {};
+            filteredRoutines.forEach((r) => {
+              const name = r.routineName;
+              if (!groupedRoutines[name]) {
+                groupedRoutines[name] = {
+                  difficulty: r.difficulty,
+                  items: []
+                };
+              }
+              groupedRoutines[name].items.push(r);
+            });
+
+            return Object.entries(groupedRoutines).map(([routineName, group]) => (
+              <div
+                key={routineName}
+                className="group p-4 rounded-xl bg-zinc-900/40 border border-white/5 hover:border-white/10 transition-all duration-200 space-y-3"
+              >
+                {/* Header */}
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-black uppercase text-primary tracking-wider truncate max-w-[220px]">
+                        {routineName}
+                      </span>
+                      <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(group.difficulty)}`}>
+                        {group.difficulty}
+                      </span>
+                    </div>
                   </div>
-                  <h4 className="text-sm font-bold text-white mt-1 leading-tight flex items-center gap-1.5">
-                    <Award size={12} className="text-zinc-500 flex-shrink-0" />
-                    <span className="truncate">{routine.exerciseName}</span>
-                  </h4>
-                  <div className="flex gap-3 text-[11px] text-light/60 mt-1.5 font-medium">
-                    <span>{routine.sets} series</span>
-                    <span className="text-white/20">•</span>
-                    <span>{routine.reps} reps</span>
-                    {routine.intensityPct && (
-                      <>
-                        <span className="text-white/20">•</span>
-                        <span className="text-primary">{routine.intensityPct}% int.</span>
-                      </>
-                    )}
+                  {/* Actions for the whole routine or adding exercise */}
+                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleOpenAddForRoutine(routineName, group.difficulty)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all text-[9px] font-extrabold uppercase tracking-wider"
+                      title="Añadir ejercicio a esta rutina"
+                    >
+                      <Plus size={10} /> Añadir Movimiento
+                    </button>
                   </div>
-                  {routine.description && (
-                    <p className="text-[10px] text-light/40 mt-1.5 leading-relaxed line-clamp-2">
-                      {routine.description}
-                    </p>
-                  )}
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                  <button
-                    onClick={() => handleOpenEdit(routine)}
-                    className="p-1 rounded bg-zinc-800 text-light/70 hover:text-white hover:bg-zinc-700 transition-all"
-                    title="Editar"
-                  >
-                    <Edit size={11} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(routine.id, routine.exerciseName)}
-                    className="p-1 rounded bg-red-950/20 text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-500/10 transition-all"
-                    title="Eliminar"
-                  >
-                    <Trash2 size={11} />
-                  </button>
+
+                {/* Exercises list */}
+                <div className="space-y-3 pl-3 border-l-2 border-white/10">
+                  {group.items.map((routine) => (
+                    <div key={routine.id} className="group/item flex justify-between items-start gap-3 text-xs">
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-white leading-tight flex items-center gap-1.5 text-xs">
+                            <Dumbbell size={10} className="text-light/40 flex-shrink-0" />
+                            <span>{routine.exerciseName}</span>
+                          </h4>
+                          <span className="text-[10px] text-light/40 font-semibold">
+                            {routine.sets}x{routine.reps} {routine.intensityPct ? `(${routine.intensityPct}%)` : ""}
+                          </span>
+                        </div>
+                        {routine.description && (
+                          <p className="text-[10px] text-light/40 leading-relaxed font-normal">
+                            {routine.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Hover item actions */}
+                      <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
+                        <button
+                          onClick={() => handleOpenEdit(routine)}
+                          className="p-1 rounded bg-zinc-800 text-light/70 hover:text-white hover:bg-zinc-700 transition-all"
+                          title="Editar Ejercicio"
+                        >
+                          <Edit size={10} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(routine.id, routine.exerciseName)}
+                          className="p-1 rounded bg-red-950/20 text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-500/10 transition-all"
+                          title="Eliminar Ejercicio"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))
+            ));
+          })()
         )}
       </div>
 

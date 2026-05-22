@@ -50,6 +50,7 @@ export const students = sqliteTable('students', {
   membershipStartDate: text('membership_start_date'), // ISO date string
   membershipEndDate: text('membership_end_date'), // ISO date string
   notes: text('notes'), // Admin notes
+  planId: integer('plan_id'), // Associated Plan ID
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
@@ -120,6 +121,43 @@ export const routines = sqliteTable('routines', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+export const workouts = sqliteTable('workouts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  description: text('description'),
+  difficulty: text('difficulty').notNull(), // 'Principiante', 'Intermedio', 'Avanzado'
+  magicToken: text('magic_token').notNull().unique(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const workoutExercises = sqliteTable('workout_exercises', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  workoutId: integer('workout_id').notNull().references(() => workouts.id, { onDelete: 'cascade' }),
+  routineName: text('routine_name').notNull(), // e.g. "Calentamiento", "Fuerza", "WOD"
+  exerciseName: text('exercise_name').notNull(),
+  description: text('description'),
+  sets: integer('sets').notNull(),
+  reps: text('reps').notNull(),
+  intensityPct: integer('intensity_pct'),
+  difficulty: text('difficulty').notNull(),
+  restSeconds: integer('rest_seconds'), // rest time in seconds between sets
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// Equipment inventory table
+export const equipment = sqliteTable('equipment', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  category: text('category').notNull(), // 'barras', 'mancuernas', 'maquinas', 'funcional', 'cardio', 'accesorios'
+  quantity: integer('quantity').notNull().default(1),
+  description: text('description'),
+  isAvailable: integer('is_available', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 export type Admin = typeof admins.$inferSelect;
 export type NewAdmin = typeof admins.$inferInsert;
 export type ClassType = typeof classTypes.$inferSelect;
@@ -138,4 +176,10 @@ export type RateLimit = typeof rateLimits.$inferSelect;
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type Routine = typeof routines.$inferSelect;
 export type NewRoutine = typeof routines.$inferInsert;
+export type Workout = typeof workouts.$inferSelect;
+export type NewWorkout = typeof workouts.$inferInsert;
+export type WorkoutExercise = typeof workoutExercises.$inferSelect;
+export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
+export type Equipment = typeof equipment.$inferSelect;
+export type NewEquipment = typeof equipment.$inferInsert;
 

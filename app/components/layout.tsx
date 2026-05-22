@@ -33,13 +33,23 @@ function WhatsAppButton() {
 }
 
 // ── Header ────────────────────────────────────────
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({
+  children,
+  hideFooter = false,
+  hideHeader = false,
+  hideWhatsApp = false,
+}: {
+  children: React.ReactNode;
+  hideFooter?: boolean;
+  hideHeader?: boolean;
+  hideWhatsApp?: boolean;
+}) {
   return (
-    <div className="bg-dark text-light font-sans min-h-screen">
-      <Header />
-      <main>{children}</main>
-      <Footer />
-      <WhatsAppButton />
+    <div className="bg-dark text-light font-sans min-h-screen flex flex-col">
+      {!hideHeader && <Header />}
+      <main className="flex-1 flex flex-col">{children}</main>
+      {!hideFooter && <Footer />}
+      {!hideWhatsApp && <WhatsAppButton />}
     </div>
   );
 }

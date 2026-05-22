@@ -205,6 +205,35 @@ app.get('/api/health', (c) => {
 });
 
 // Auth routes
+app.get('/api/auth/dev-login', async (c) => {
+  const isLocal = new URL(c.req.url).hostname === 'localhost' || new URL(c.req.url).hostname === '127.0.0.1';
+  if (!isLocal && (c.env as any).NODE_ENV !== 'development') {
+    return c.json({ error: 'Not allowed in production' }, 403);
+  }
+  const db = drizzle(c.env.DB, { schema });
+  const sessionId = 'dev-session-token-1234';
+  const expiresAt = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+  await db.delete(schema.sessions).where(eq(schema.sessions.id, sessionId));
+  await db.insert(schema.sessions).values({
+    id: sessionId,
+    userId: 'dev-user-id-1234',
+    email: 'mapplerak@gmail.com',
+    expiresAt,
+  });
+
+  setCookie(c, 'admin_session', sessionId, {
+    path: '/',
+    secure: false,
+    httpOnly: true,
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: 'Lax',
+  });
+
+  return c.redirect('/admin');
+});
+
 app.get('/api/auth/login', async (c) => {
   const ip = getClientIP(c);
   const db = c.env.DB; // raw D1 for rate limiting (no drizzle needed)
@@ -806,6 +835,18 @@ app.post('/api/assistant', requireAdmin, async (c) => {
     // Fetch all routines from the DB
     const dbRoutines = await db.select().from(schema.routines).all();
 
+    // Fetch available equipment from DB
+    let equipmentContext = 'No hay equipamiento registrado en el sistema.';
+    try {
+      const dbEquipment = await db.select().from(schema.equipment).all();
+      const available = dbEquipment.filter(e => e.isAvailable);
+      if (available.length > 0) {
+        equipmentContext = available.map(e =>
+          `- **${e.name}** (${e.category}): ${e.quantity} unidades disponibles${e.description ? '. ' + e.description : ''}`
+        ).join('\n');
+      }
+    } catch { /* equipment table may not exist yet */ }
+
     // Build routines context string
     const routinesContext = dbRoutines.map(r =>
       `- **${r.routineName}** | ${r.exerciseName}: ${r.sets} series x ${r.reps} reps (${r.intensityPct ? r.intensityPct + '%' : 'N/A'} int.) - ${r.difficulty}. *Técnica:* ${r.description || 'Sin descripción'}`
@@ -818,10 +859,60 @@ app.post('/api/assistant', requireAdmin, async (c) => {
       .get();
 
     const token = c.env.HF_TOKEN || c.env.HUGGINGFACE_TOKEN || hfTokenSetting?.value;
+    const systemPrompt = `Eres un Coach y Entrenador de CrossFit certificado y experto de TrainoFit, además de asesor de bienestar físico y salud. Tu objetivo es asesorar a los alumnos en español sobre entrenamientos, responder dudas y recomendar rutinas de forma profesional, segura y altamente motivadora.
 
+## BASE DE DATOS DE RUTINAS (TrainoFit):
+${routinesContext || 'Sin rutinas cargadas aún.'}
+
+## EQUIPAMIENTO DISPONIBLE EN EL GYM:
+${equipmentContext}
+IMPORTANTE: SOLO diseña rutinas usando el equipamiento listado arriba. Si un ejercicio requiere equipo no disponible, ofrece una alternativa con el equipo existente o con el peso corporal. Nunca sugieras ejercicios con equipamiento que no está en el inventario del gym.
+
+## TIPOS DE ENTRENAMIENTO SOPORTADOS:
+- CrossFit / WOD (metabólico, AMRAP, EMOM, for-time)
+- Fuerza y Potencia (pesas, barbell, kettlebell)
+- Acondicionamiento Físico (cardio, resistencia, funcional)
+- Calistenia (peso corporal: dominadas, flexiones, dips, L-sit)
+- Gimnasia deportiva (rings, paralelas, handstand)
+
+REGLAS DE FORMATO Y REDUNDANCIA (¡CRÍTICO!):
+1. NO DETALLES la rutina completa ni listes los ejercicios en tu respuesta de texto.
+2. En su lugar, proporciona únicamente un texto de resumen/overview muy simple y breve (máximo 2-3 líneas o 1 párrafo corto) explicando el enfoque u objetivo principal de la rutina propuesta.
+3. Delega todos los detalles específicos de los ejercicios (series, repeticiones, intensidad, descanso, descripción técnica) al bloque JSON de abajo. El usuario ya verá la rutina estructurada y renderizada en tarjetas dentro de la interfaz, por lo que repetirla en el texto es redundante y satura la pantalla de forma innecesaria.
+
+REGLAS DE VALIDACIÓN:
+1. Siempre prioriza la seguridad. Antes de proponer rutinas advierte sobre lesiones o condiciones de salud.
+2. Las series deben ser 1-6, reps consistentes con el objetivo (fuerza: 1-5, hipertrofia: 8-12, resistencia: 15+).
+3. La intensidad porcentual debe ser realista para el nivel del alumno.
+4. Para cada ejercicio, indica el descanso recomendado en segundos (restSeconds).
+
+PROTOCOLO DE GUARDADO (TOOL CALLING):
+DEBES INCLUIR SIEMPRE al final de tu respuesta el bloque JSON con la acción "save_routine" y los detalles de cada ejercicio diseñado. Esto es obligatorio para que el sistema pueda guardar y compartir la rutina con el alumno. No lo omitas bajo ninguna circunstancia cuando propongas o modifiques una rutina. Debe tener exactamente esta estructura:
+\`\`\`json
+{
+  "action": "save_routine",
+  "routines": [
+    {
+      "routineName": "Nombre de la Rutina",
+      "exerciseName": "Nombre del Ejercicio",
+      "description": "Técnica, seguridad, ejecución.",
+      "sets": 4,
+      "reps": "8-10",
+      "intensityPct": 75,
+      "restSeconds": 90,
+      "difficulty": "Principiante"
+    }
+  ]
+}
+\`\`\`
+Genera siempre este bloque si has diseñado, modificado o propuesto una rutina.`;
+
+    let aiText = "";
+    let source = "none";
+
+    // 1. Try Hugging Face Inference API with Qwen 2.5 72B (very smart model!)
     if (token) {
       try {
-        // 1. Use the new centralized Hugging Face router URL
         const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -829,44 +920,11 @@ app.post('/api/assistant', requireAdmin, async (c) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            // 2. The router will use this field to direct your request
-            model: "Qwen/Qwen2.5-7B-Instruct",
+            model: "Qwen/Qwen2.5-72B-Instruct",
             messages: [
               {
                 role: "system",
-                content: `Eres un Coach y Entrenador de CrossFit certificado y experto de TrainoFit, además de asesor de bienestar físico y salud. Tu objetivo es asesorar a los alumnos en español sobre entrenamientos, responder dudas y recomendar rutinas de forma profesional, segura y altamente motivadora.
-
-Aquí tienes la base de datos de rutinas oficiales cargadas en el sistema de TrainoFit:
-${routinesContext}
-
-REGLAS DE VALIDACIÓN DE EJERCICIOS Y CONSEJOS MÉDICOS:
-1. Siempre prioriza la seguridad. Antes de proponer o guardar una rutina para un alumno con lesiones o condiciones de salud conocidas (ej. dolor de espalda, rodilla, hipertensión, embarazo), debes validar si el entrenamiento es seguro, dar advertencias médicas específicas (ej. evitar el esfuerzo isométrico prolongado si hay hipertensión, evitar flexiones profundas si hay dolor lumbar) y ofrecer adaptaciones/escalamientos (ej. cambiar sentadillas por sentadillas a cajón, reducir peso).
-2. Valida la estructura del ejercicio:
-   - Las series (sets) deben estar en un rango de 1 a 6 series.
-   - Las repeticiones (reps) deben ser consistentes con el objetivo (ej. 1-5 reps para fuerza máxima, 8-12 reps para hipertrofia, 15+ para resistencia, o formato AMRAP/EMOM para acondicionamiento).
-   - La intensidad porcentual (intensityPct) debe ser realista y segura para el nivel sugerido.
-3. Si el usuario te pide crear, modificar o proponer una rutina y deseas guardarla en el sistema una vez que consideres que está bien estructurada, validada y adaptada médicamente, debes generar un bloque JSON especial que el sistema interceptará para permitir su guardado.
-
-PROTOCOLO DE GUARDADO DE RUTINA (TOOL CALLING):
-Cuando consideres que la rutina está lista para ser guardada en la base de datos de TrainoFit, debes incluir al final de tu respuesta un bloque de código JSON con el siguiente formato exacto:
-\`\`\`json
-{
-  "action": "save_routine",
-  "routines": [
-    {
-      "routineName": "Nombre de la Rutina (ej. Fuerza de Piernas)",
-      "exerciseName": "Nombre del Ejercicio (ej. Back Squat)",
-      "description": "Explicación técnica detallada, ritmo, descanso y consejos de seguridad médica específicos para este ejercicio.",
-      "sets": 4,
-      "reps": "8-10",
-      "intensityPct": 75,
-      "difficulty": "Principiante" | "Intermedio" | "Avanzado"
-    }
-  ]
-}
-\`\`\`
-Puedes proponer una lista de múltiples ejercicios bajo la misma "routineName" agregando más objetos al array de "routines".
-Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha solicitado diseñarla o guardarla.`
+                content: systemPrompt
               },
               ...history.slice(-6),
               {
@@ -874,7 +932,7 @@ Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha sol
                 content: message
               }
             ],
-            max_tokens: 600,
+            max_tokens: 2048,
             temperature: 0.7
           })
         });
@@ -887,34 +945,10 @@ Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha sol
               };
             }>;
           };
-
-          const aiText = data.choices?.[0]?.message?.content;
-
-          if (aiText) {
-            let toolCall = null;
-            let cleanedText = aiText;
-
-            // Find JSON code block matching action "save_routine"
-            const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
-            const match = aiText.match(jsonRegex);
-            if (match) {
-              try {
-                const jsonParsed = JSON.parse(match[1].trim());
-                if (jsonParsed && jsonParsed.action === 'save_routine') {
-                  toolCall = jsonParsed;
-                  // Remove the JSON code block from the output text
-                  cleanedText = aiText.replace(jsonRegex, '').trim();
-                }
-              } catch (e) {
-                console.error("Failed to parse JSON tool call from AI response:", e);
-              }
-            }
-
-            return c.json({
-              text: cleanedText,
-              toolCall: toolCall,
-              source: "huggingface"
-            });
+          const content = data.choices?.[0]?.message?.content;
+          if (content) {
+            aiText = content;
+            source = "huggingface-72b";
           }
         } else {
           console.error("Hugging Face API returned error status:", response.status, await response.text());
@@ -924,25 +958,146 @@ Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha sol
       }
     }
 
+    // 2. Fallback to Cloudflare Workers AI if Hugging Face failed or wasn't configured
+    if (!aiText && (c.env as any).AI) {
+      try {
+        const cfResult = await (c.env as any).AI.run('@cf/meta/llama-3-8b-instruct', {
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            ...history.slice(-6).map((h: any) => ({ role: h.role, content: h.content })),
+            {
+              role: "user",
+              content: message
+            }
+          ]
+        });
+        if (cfResult && cfResult.response) {
+          aiText = cfResult.response;
+          source = "cloudflare-workers-ai";
+        }
+      } catch (cfErr) {
+        console.error("Cloudflare Workers AI fallback failed:", cfErr);
+      }
+    }
+
+    // 3. Process AI response text and toolCall structures if we got a response
+    if (aiText) {
+      let toolCall = null;
+      let cleanedText = aiText;
+
+      // Robust Regex Fallback Parser to guarantee extraction
+      // Pass 1: find fenced code blocks containing save_routine
+      const fencedRegex = /```(?:json)?\s*([\s\S]*?)```/g;
+      let fencedMatch: RegExpExecArray | null;
+      while ((fencedMatch = fencedRegex.exec(cleanedText)) !== null) {
+        try {
+          const candidate = fencedMatch[1].trim();
+          const parsed = JSON.parse(candidate);
+          if (parsed && parsed.action === 'save_routine' && Array.isArray(parsed.routines)) {
+            toolCall = parsed;
+            cleanedText = cleanedText.replace(fencedMatch[0], '').trim();
+            break;
+          }
+        } catch { /* skip */ }
+      }
+
+      // Pass 2: bare JSON object
+      if (!toolCall) {
+        const bareRegex = /\{\s*"action"\s*:\s*"save_routine"[\s\S]*?\}/g;
+        const bareMatch = cleanedText.match(bareRegex);
+        if (bareMatch) {
+          try {
+            const parsed = JSON.parse(bareMatch[0]);
+            if (parsed && Array.isArray(parsed.routines)) {
+              toolCall = parsed;
+              cleanedText = cleanedText.replace(bareMatch[0], '').trim();
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      // Nuclear clean remaining braces/code fences
+      cleanedText = cleanedText
+        .replace(/```(?:json)?[\s\S]*?```/g, '')
+        .replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      return c.json({
+        text: cleanedText || '✅ Rutina procesada correctamente.',
+        toolCall: toolCall,
+        source: source
+      });
+    }
+
     // Local Fallback Responder (always works, zero external dependency!)
     const normMsg = message.toLowerCase();
     let responseText = "";
+    let localToolCall = null;
 
     if (normMsg.includes("fuerza") || normMsg.includes("pierna") || normMsg.includes("squat") || normMsg.includes("sentadilla")) {
-      const legRoutines = dbRoutines.filter(r => r.routineName.includes("Piernas"));
-      responseText = `💪 **Recomendación del Coach:** Te sugiero nuestra rutina de **Fuerza y Potencia de Piernas** (Avanzado):\n\n` +
-        legRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} (${r.intensityPct}% 1RM). *Técnica:* ${r.description}`).join('\n') +
-        `\n\n*Consejo:* Calienta bien las articulaciones antes de iniciar los levantamientos y mantén el abdomen activo. ¡A darle con todo!`;
+      const legRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("piernas") || r.routineName.toLowerCase().includes("leg"));
+      const routinesToUse = legRoutines.length > 0 ? legRoutines : [
+        { id: 1, routineName: "Fuerza de Piernas", exerciseName: "Sentadilla Trasera (Back Squat)", sets: 4, reps: "8", intensityPct: 75, difficulty: "Intermedio", description: "Mantén el core firme y baja rompiendo el paralelo." },
+        { id: 2, routineName: "Fuerza de Piernas", exerciseName: "Peso Muerto Rumano", sets: 3, reps: "10", intensityPct: 65, difficulty: "Intermedio", description: "Enfócate en la bisagra de cadera manteniendo espalda neutra." }
+      ];
+      responseText = `💪 **Recomendación del Coach:** Te sugiero nuestra rutina de **Fuerza y Potencia de Piernas**. He preparado una secuencia enfocada en construir fuerza y potencia en el tren inferior, ideal para desarrollar tus cuádriceps, glúteos e isquiotibiales de forma segura.`;
+      
+      localToolCall = {
+        action: "save_routine",
+        routines: routinesToUse.map(r => ({
+          routineName: r.routineName,
+          exerciseName: r.exerciseName,
+          description: r.description || "Ejecutar con control",
+          sets: r.sets,
+          reps: r.reps.toString(),
+          intensityPct: r.intensityPct || 70,
+          difficulty: r.difficulty
+        }))
+      };
     } else if (normMsg.includes("metab") || normMsg.includes("cardio") || normMsg.includes("wod") || normMsg.includes("burpee") || normMsg.includes("murph")) {
-      const cardRoutines = dbRoutines.filter(r => r.routineName.includes("Metabólico") || r.routineName.includes("Murph"));
-      responseText = `⚡ **WOD Recomendado por el Coach:** Te sugiero nuestra rutina de **Acondicionamiento Metabólico**:\n\n` +
-        cardRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} reps. ${r.description}`).join('\n') +
-        `\n\n*Consejo:* Regula el ritmo desde el inicio, este tipo de entrenamientos requiere una intensidad sostenida. ¡No te rindas!`;
+      const cardRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("metab") || r.routineName.toLowerCase().includes("murph") || r.routineName.toLowerCase().includes("cardio"));
+      const routinesToUse = cardRoutines.length > 0 ? cardRoutines : [
+        { id: 1, routineName: "Acondicionamiento Metabólico", exerciseName: "Burpees", sets: 4, reps: "15", intensityPct: 80, difficulty: "Intermedio", description: "Mantén ritmo constante sin detenerte." },
+        { id: 2, routineName: "Acondicionamiento Metabólico", exerciseName: "Kettlebell Swings", sets: 4, reps: "20", intensityPct: 75, difficulty: "Intermedio", description: "Empuje potente desde las caderas, no uses los hombros." }
+      ];
+      responseText = `⚡ **WOD Recomendado por el Coach:** Te sugiero nuestra rutina de **Acondicionamiento Metabólico**. Está diseñada para elevar tu ritmo cardíaco, mejorar tu resistencia cardiovascular y quemar calorías de manera eficiente y dinámica.`;
+      
+      localToolCall = {
+        action: "save_routine",
+        routines: routinesToUse.map(r => ({
+          routineName: r.routineName,
+          exerciseName: r.exerciseName,
+          description: r.description || "Mantén el ritmo",
+          sets: r.sets,
+          reps: r.reps.toString(),
+          intensityPct: r.intensityPct || 75,
+          difficulty: r.difficulty
+        }))
+      };
     } else if (normMsg.includes("empuje") || normMsg.includes("pecho") || normMsg.includes("hombro") || normMsg.includes("press")) {
-      const pushRoutines = dbRoutines.filter(r => r.routineName.includes("Empuje"));
-      responseText = `🔥 **Recomendación de Fuerza Superior:** Aquí tienes la rutina de **Fuerza de Empuje Superior** (Intermedio/Avanzado):\n\n` +
-        pushRoutines.map(r => `- **${r.exerciseName}**: ${r.sets}x${r.reps} reps. *Foco:* ${r.description}`).join('\n') +
-        `\n\n*Consejo:* Mantén el core firme y evita usar impulso de piernas en el press militar para maximizar la tensión en los hombros.`;
+      const pushRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("empuje") || r.routineName.toLowerCase().includes("pecho") || r.routineName.toLowerCase().includes("push"));
+      const routinesToUse = pushRoutines.length > 0 ? pushRoutines : [
+        { id: 1, routineName: "Fuerza Empuje Superior", exerciseName: "Press de Banca Plana", sets: 4, reps: "8", intensityPct: 75, difficulty: "Intermedio", description: "Retracción escapular completa y codos a 45 grados." },
+        { id: 2, routineName: "Fuerza Empuje Superior", exerciseName: "Press Militar de Hombros", sets: 3, reps: "10", intensityPct: 70, difficulty: "Intermedio", description: "Cuerpo firme sin arquear la espalda lumbar." }
+      ];
+      responseText = `🔥 **Recomendación de Fuerza Superior:** Aquí tienes la rutina de **Fuerza de Empuje Superior**. Esta propuesta está enfocada en el empuje del tren superior para fortalecer pectoral, hombros y tríceps de manera balanceada.`;
+      
+      localToolCall = {
+        action: "save_routine",
+        routines: routinesToUse.map(r => ({
+          routineName: r.routineName,
+          exerciseName: r.exerciseName,
+          description: r.description || "Foco en la contracción",
+          sets: r.sets,
+          reps: r.reps.toString(),
+          intensityPct: r.intensityPct || 75,
+          difficulty: r.difficulty
+        }))
+      };
     } else {
       responseText = `👋 ¡Hola! Soy tu Coach Virtual de **TrainoFit**.\n\nPregúntame sobre rutinas de entrenamiento, ejercicios o consejos para mejorar tu técnica. Aquí tienes algunas de nuestras rutinas destacadas:\n\n` +
         `- **Fuerza de Piernas** (Sentadillas y Peso Muerto a alta intensidad)\n` +
@@ -954,6 +1109,7 @@ Solo genera este bloque JSON si la rutina es válida, segura y el usuario ha sol
 
     return c.json({
       text: responseText,
+      toolCall: localToolCall,
       source: "local",
       tip: token ? undefined : "Puedes configurar tu token de Hugging Face (`HF_TOKEN`) en el panel de administrador para activar la IA completa."
     });
@@ -1034,6 +1190,253 @@ app.delete('/api/admin/routines/:id', requireAdmin, async (c) => {
   await db.delete(schema.routines).where(eq(schema.routines.id, id));
 
   return c.json({ success: true });
+});
+
+// ==================== WORKOUTS API ====================
+
+// Admin API - Get all workouts with their exercises
+app.get('/api/admin/workouts', requireAdmin, async (c) => {
+  try {
+    const db = drizzle(c.env.DB, { schema });
+    const allWorkouts = await db.query.workouts.findMany({
+      orderBy: [desc(schema.workouts.id)],
+    });
+    const allExercises = await db.query.workoutExercises.findMany();
+
+    const workoutsWithExercises = allWorkouts.map(w => ({
+      ...w,
+      exercises: allExercises.filter(e => e.workoutId === w.id),
+    }));
+
+    return c.json(workoutsWithExercises);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Admin API - Create workout
+app.post('/api/admin/workouts', requireAdmin, async (c) => {
+  try {
+    const body = await c.req.json();
+    const db = drizzle(c.env.DB, { schema });
+
+    if (!body.name || !body.difficulty) {
+      return c.json({ error: 'Missing name or difficulty' }, 400);
+    }
+
+    const token = crypto.randomUUID();
+
+    const newWorkout = await db.insert(schema.workouts).values({
+      name: body.name,
+      description: body.description || '',
+      difficulty: body.difficulty,
+      magicToken: token,
+    }).returning();
+
+    const workoutId = newWorkout[0].id;
+    const createdExercises = [];
+
+    if (body.exercises && Array.isArray(body.exercises)) {
+      for (const ex of body.exercises) {
+        if (!ex.routineName || !ex.exerciseName || !ex.sets || !ex.reps) continue;
+        const newEx = await db.insert(schema.workoutExercises).values({
+          workoutId,
+          routineName: ex.routineName,
+          exerciseName: ex.exerciseName,
+          description: ex.description || '',
+          sets: parseInt(ex.sets),
+          reps: String(ex.reps),
+          intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
+          difficulty: ex.difficulty || body.difficulty,
+        }).returning();
+        createdExercises.push(newEx[0]);
+      }
+    }
+
+    return c.json({
+      ...newWorkout[0],
+      exercises: createdExercises,
+    }, 201);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Admin API - Update workout
+app.put('/api/admin/workouts/:id', requireAdmin, async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const body = await c.req.json();
+    const db = drizzle(c.env.DB, { schema });
+
+    const updated = await db.update(schema.workouts)
+      .set({
+        name: body.name,
+        description: body.description,
+        difficulty: body.difficulty,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.workouts.id, id))
+      .returning();
+
+    if (updated.length === 0) {
+      return c.json({ error: 'Workout not found' }, 404);
+    }
+
+    // Replace the exercises
+    await db.delete(schema.workoutExercises).where(eq(schema.workoutExercises.workoutId, id));
+
+    const createdExercises = [];
+    if (body.exercises && Array.isArray(body.exercises)) {
+      for (const ex of body.exercises) {
+        if (!ex.routineName || !ex.exerciseName || !ex.sets || !ex.reps) continue;
+        const newEx = await db.insert(schema.workoutExercises).values({
+          workoutId: id,
+          routineName: ex.routineName,
+          exerciseName: ex.exerciseName,
+          description: ex.description || '',
+          sets: parseInt(ex.sets),
+          reps: String(ex.reps),
+          intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
+          difficulty: ex.difficulty || body.difficulty,
+        }).returning();
+        createdExercises.push(newEx[0]);
+      }
+    }
+
+    return c.json({
+      ...updated[0],
+      exercises: createdExercises,
+    });
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Admin API - Delete workout
+app.delete('/api/admin/workouts/:id', requireAdmin, async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const db = drizzle(c.env.DB, { schema });
+
+    await db.delete(schema.workoutExercises).where(eq(schema.workoutExercises.workoutId, id));
+    await db.delete(schema.workouts).where(eq(schema.workouts.id, id));
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// ==================== EQUIPMENT API ====================
+
+// Get all equipment
+app.get('/api/admin/equipment', requireAdmin, async (c) => {
+  try {
+    const db = drizzle(c.env.DB, { schema });
+    const list = await db.select().from(schema.equipment).orderBy(asc(schema.equipment.category), asc(schema.equipment.name));
+    return c.json(list);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Create equipment
+app.post('/api/admin/equipment', requireAdmin, async (c) => {
+  try {
+    const body = await c.req.json() as { name: string; category: string; quantity: number; description?: string; isAvailable?: boolean };
+    const db = drizzle(c.env.DB, { schema });
+    const [created] = await db.insert(schema.equipment).values({
+      name: body.name,
+      category: body.category,
+      quantity: body.quantity ?? 1,
+      description: body.description,
+      isAvailable: body.isAvailable !== false,
+    }).returning();
+    return c.json(created, 201);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Update equipment
+app.put('/api/admin/equipment/:id', requireAdmin, async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const body = await c.req.json() as Partial<{ name: string; category: string; quantity: number; description: string; isAvailable: boolean }>;
+    const db = drizzle(c.env.DB, { schema });
+    const [updated] = await db.update(schema.equipment)
+      .set({ ...body, updatedAt: new Date() })
+      .where(eq(schema.equipment.id, id))
+      .returning();
+    return c.json(updated);
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Delete equipment
+app.delete('/api/admin/equipment/:id', requireAdmin, async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    const db = drizzle(c.env.DB, { schema });
+    await db.delete(schema.equipment).where(eq(schema.equipment.id, id));
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Public API - Get shared workout by magic token
+app.get('/api/workout/shared/:token', async (c) => {
+  try {
+    const token = c.req.param('token');
+    const ip = getClientIP(c);
+    const db = drizzle(c.env.DB, { schema });
+    const rawDb = c.env.DB;
+
+    // ISO 27001 A.9.4.2 — Rate limit public access to prevent token brute-forcing
+    if (await isRateLimited(rawDb, ip, 'workout/shared')) {
+      await audit(db, 'SHARED_WORKOUT_BLOCKED', {
+        ip,
+        userAgent: c.req.header('User-Agent'),
+        details: { reason: 'rate_limit_exceeded', token },
+      });
+      return c.json({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, 429);
+    }
+    await recordAttempt(rawDb, ip, 'workout/shared');
+
+    const workout = await db.query.workouts.findFirst({
+      where: eq(schema.workouts.magicToken, token),
+    });
+
+    if (!workout) {
+      await audit(db, 'SHARED_WORKOUT_NOT_FOUND', {
+        ip,
+        userAgent: c.req.header('User-Agent'),
+        details: { token },
+      });
+      return c.json({ error: 'Workout not found' }, 404);
+    }
+
+    const exercises = await db.query.workoutExercises.findMany({
+      where: eq(schema.workoutExercises.workoutId, workout.id),
+    });
+
+    // ISO 27001 A.12.4.1 — Audit successful access to public shared resources
+    await audit(db, 'WORKOUT_ACCESSED', {
+      ip,
+      userAgent: c.req.header('User-Agent'),
+      details: { workoutId: workout.id, workoutName: workout.name, token }
+    });
+
+    return c.json({
+      ...workout,
+      exercises,
+    });
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
 });
 
 export default app;
