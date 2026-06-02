@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { useNavigate, useSearchParams, Link } from "react-router";
 import {
-  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings, Bot, Menu, X, Package, Image as ImageIcon
+  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings, Bot, Menu, X, Package, Image as ImageIcon, Calculator
 } from "lucide-react";
 import { AIChatWidget } from "~/components/ai-chat-widget";
 import { RoutinesManager } from "~/components/admin/routines-manager";
 import { WorkoutsManager } from "~/components/admin/workouts-manager";
 import { FlyerGenerator } from "~/components/admin/flyer-generator";
+import { ToolsManager } from "~/components/admin/tools-manager";
 import {
   DndContext,
   DragOverlay,
@@ -79,6 +80,47 @@ interface Student {
 // API is served from the same origin via Hono adapter
 const API_URL = '';
 
+type SectionId = 'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'coach' | 'equipment' | 'flyer' | 'tools';
+
+const NAV_GROUPS: { group: string; items: { id: SectionId; label: string; icon: React.ReactNode }[] }[] = [
+  {
+    group: 'Entrenamiento',
+    items: [
+      { id: 'coach', label: 'Entrenador IA', icon: <Bot size={16} /> },
+      { id: 'tools', label: 'Herramientas', icon: <Calculator size={16} /> },
+      { id: 'equipment', label: 'Equipamiento', icon: <Package size={16} /> },
+    ],
+  },
+  {
+    group: 'Gestión',
+    items: [
+      { id: 'students', label: 'Alumnos', icon: <Users size={16} /> },
+      { id: 'plans', label: 'Planes', icon: <DollarSign size={16} /> },
+      { id: 'schedules', label: 'Horarios', icon: <CalendarDays size={16} /> },
+      { id: 'classTypes', label: 'Tipos de Clase', icon: <BookOpen size={16} /> },
+    ],
+  },
+  {
+    group: 'Sistema',
+    items: [
+      { id: 'flyer', label: 'Creador de Flyers', icon: <ImageIcon size={16} /> },
+      { id: 'settings', label: 'Configuración', icon: <Settings size={16} /> },
+    ],
+  },
+];
+
+const SECTION_TITLES: Record<SectionId, string> = {
+  coach: 'Entrenador IA y Rutinas',
+  tools: 'Herramientas de Coaching',
+  equipment: 'Inventario de Equipamiento',
+  students: 'Directorio de Alumnos',
+  plans: 'Planes de Suscripción',
+  schedules: 'Horarios y Clases',
+  classTypes: 'Tipos de Clase',
+  flyer: 'Generador de Flyers',
+  settings: 'Configuración General',
+};
+
 function SidebarTabButton({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <button
@@ -116,7 +158,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
 
   // Active section management
-  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'coach' | 'equipment' | 'flyer'>('schedules');
+  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'coach' | 'equipment' | 'flyer' | 'tools'>('coach');
 
   // Schedules state
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
@@ -626,7 +668,7 @@ export default function Admin() {
 
   return (
     <Layout hideFooter={true} hideHeader={true} hideWhatsApp={true}>
-      <div className="flex min-h-screen bg-zinc-950 text-light relative overflow-hidden w-full">
+      <div className="flex h-screen bg-zinc-950 text-light relative overflow-hidden w-full">
         {/* Background Radial Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[160px] pointer-events-none" />
 
@@ -651,56 +693,22 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Sidebar Navigation */}
-          <div className="flex-grow py-6 px-4 space-y-1.5">
-            <SidebarTabButton
-              active={activeSection === 'schedules'}
-              icon={<CalendarDays size={16} />}
-              label="Horarios"
-              onClick={() => setActiveSection('schedules')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'classTypes'}
-              icon={<BookOpen size={16} />}
-              label="Tipos de Clases"
-              onClick={() => setActiveSection('classTypes')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'students'}
-              icon={<Users size={16} />}
-              label="Alumnos"
-              onClick={() => setActiveSection('students')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'plans'}
-              icon={<DollarSign size={16} />}
-              label="Planes"
-              onClick={() => setActiveSection('plans')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'settings'}
-              icon={<Settings size={16} />}
-              label="Configuración"
-              onClick={() => setActiveSection('settings')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'coach'}
-              icon={<Bot size={16} />}
-              label="Coach IA"
-              onClick={() => setActiveSection('coach')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'equipment'}
-              icon={<Package size={16} />}
-              label="Equipamiento"
-              onClick={() => setActiveSection('equipment')}
-            />
-            <SidebarTabButton
-              active={activeSection === 'flyer'}
-              icon={<ImageIcon size={16} />}
-              label="Creador de Flyers"
-              onClick={() => setActiveSection('flyer')}
-            />
+          {/* Sidebar Navigation — grouped into hubs */}
+          <div className="flex-grow py-6 px-4 space-y-5 overflow-y-auto scrollbar-thin">
+            {NAV_GROUPS.map((grp) => (
+              <div key={grp.group} className="space-y-1.5">
+                <p className="px-4 text-[9px] font-black uppercase tracking-widest text-light/30">{grp.group}</p>
+                {grp.items.map((item) => (
+                  <SidebarTabButton
+                    key={item.id}
+                    active={activeSection === item.id}
+                    icon={item.icon}
+                    label={item.label}
+                    onClick={() => setActiveSection(item.id)}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
 
           {/* Sidebar Footer */}
@@ -746,54 +754,20 @@ export default function Admin() {
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden fixed top-16 left-0 right-0 bg-zinc-950/95 backdrop-blur-xl border-b border-white/5 py-4 px-6 space-y-2 z-30 flex flex-col shadow-2xl">
-            <MobileTabButton
-              active={activeSection === 'schedules'}
-              icon={<CalendarDays size={16} />}
-              label="Horarios"
-              onClick={() => { setActiveSection('schedules'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'classTypes'}
-              icon={<BookOpen size={16} />}
-              label="Tipos de Clases"
-              onClick={() => { setActiveSection('classTypes'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'students'}
-              icon={<Users size={16} />}
-              label="Alumnos"
-              onClick={() => { setActiveSection('students'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'plans'}
-              icon={<DollarSign size={16} />}
-              label="Planes"
-              onClick={() => { setActiveSection('plans'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'settings'}
-              icon={<Settings size={16} />}
-              label="Configuración"
-              onClick={() => { setActiveSection('settings'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'coach'}
-              icon={<Bot size={16} />}
-              label="Coach IA"
-              onClick={() => { setActiveSection('coach'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'equipment'}
-              icon={<Package size={16} />}
-              label="Equipamiento"
-              onClick={() => { setActiveSection('equipment'); setMobileMenuOpen(false); }}
-            />
-            <MobileTabButton
-              active={activeSection === 'flyer'}
-              icon={<ImageIcon size={16} />}
-              label="Creador de Flyers"
-              onClick={() => { setActiveSection('flyer'); setMobileMenuOpen(false); }}
-            />
+            {NAV_GROUPS.map((grp) => (
+              <div key={grp.group} className="space-y-1.5">
+                <p className="px-4 pt-1 text-[9px] font-black uppercase tracking-widest text-light/30">{grp.group}</p>
+                {grp.items.map((item) => (
+                  <MobileTabButton
+                    key={item.id}
+                    active={activeSection === item.id}
+                    icon={item.icon}
+                    label={item.label}
+                    onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }}
+                  />
+                ))}
+              </div>
+            ))}
             <div className="border-t border-white/5 pt-3 mt-2 flex justify-between items-center">
               <span className="text-[10px] text-light/40 uppercase tracking-widest font-bold">Admin Console</span>
               <button
@@ -813,16 +787,7 @@ export default function Admin() {
             <div className="flex items-center gap-2 text-xs font-bold">
               <span className="text-light/40">Consola</span>
               <span className="text-light/20">/</span>
-              <span className="text-primary uppercase tracking-wider">{
-                activeSection === 'schedules' ? 'Horarios y Clases' :
-                  activeSection === 'classTypes' ? 'Tipos de Clases' :
-                    activeSection === 'students' ? 'Directorio de Alumnos' :
-                      activeSection === 'plans' ? 'Planes de Suscripción' :
-                        activeSection === 'settings' ? 'Configuración General' :
-                          activeSection === 'equipment' ? 'Inventario de Equipamiento' :
-                            activeSection === 'flyer' ? 'Generador de Flyers' :
-                            'Asistente de Rutinas Coach IA'
-              }</span>
+              <span className="text-primary uppercase tracking-wider">{SECTION_TITLES[activeSection]}</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -845,8 +810,8 @@ export default function Admin() {
             : 'overflow-y-auto px-4 sm:px-8 py-6 w-full mx-auto space-y-6 max-w-7xl'
             }`}>
 
-            {/* Dashboard Stats Overview (rendered in all sections except coach/settings/flyer) */}
-            {activeSection !== 'coach' && activeSection !== 'settings' && activeSection !== 'flyer' && (
+            {/* Dashboard Stats Overview (rendered in all sections except coach/settings/flyer/tools) */}
+            {activeSection !== 'coach' && activeSection !== 'settings' && activeSection !== 'flyer' && activeSection !== 'tools' && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Horarios / Clases Activas */}
                 <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-primary/20 hover:shadow-[0_0_20px_rgba(212,160,23,0.05)] overflow-hidden group">
@@ -1186,6 +1151,22 @@ export default function Admin() {
                   </div>
                 </div>
                 <FlyerGenerator />
+              </div>
+            )}
+
+            {/* Tools Section — coaching calculators (RM, plate loading, RPE) */}
+            {activeSection === 'tools' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                    <Calculator size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black uppercase tracking-wider text-white">Herramientas de Coaching</h2>
+                    <p className="text-[10px] text-light/50">Calculadoras precisas de 1RM, cargas por objetivo, discos de barra y RPE/RIR</p>
+                  </div>
+                </div>
+                <ToolsManager />
               </div>
             )}
 

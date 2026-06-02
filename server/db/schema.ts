@@ -116,6 +116,8 @@ export const routines = sqliteTable('routines', {
   sets: integer('sets').notNull(),
   reps: text('reps').notNull(),
   intensityPct: integer('intensity_pct'),
+  restSeconds: integer('rest_seconds'), // rest time in seconds between sets
+  section: text('section'), // 'Calentamiento', 'Principal', 'Finalizador', 'WOD', etc.
   difficulty: text('difficulty').notNull(), // 'Principiante', 'Intermedio', 'Avanzado'
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),

@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Bot, Send, Dumbbell, Zap, RotateCcw, Clipboard, 
-  ChevronRight, Package, Check, Plus, Calendar, LayoutGrid 
+  ChevronRight, Package, Calendar, Clock, Flame
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  displayContent?: string; // friendly label shown in the bubble instead of the raw prompt
   toolCall?: {
     action: "save_routine";
     routines: Array<{
       routineName: string;
       exerciseName: string;
+      section?: string;
       description?: string;
       sets: number;
       reps: string;
@@ -158,13 +160,13 @@ export function AIChatWidget({ embedded = false, onRoutineSaved }: AIChatWidgetP
     return Object.fromEntries(Object.entries(groups).filter(([_, g]) => g.items.length > 0));
   };
 
-  // Onboarding state
+  // Onboarding state — sensible defaults so a routine is one click away
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("initial");
-  const [programType, setProgramType] = useState<"single" | "cycle" | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
-  const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null); // acts as Split label if programType is cycle
+  const [programType, setProgramType] = useState<"single" | "cycle">("single");
+  const [selectedType, setSelectedType] = useState<string>("Fuerza / Pesas");
+  const [selectedLevel, setSelectedLevel] = useState<string>("Intermedio");
+  const [selectedDuration, setSelectedDuration] = useState<string>("60 min");
+  const [selectedMuscle, setSelectedMuscle] = useState<string>("Full Body / Completo"); // acts as Split label if programType is cycle
 
   // Onboarding Back History Navigation Stack
   const [stepHistory, setStepHistory] = useState<OnboardingStep[]>([]);
@@ -230,15 +232,19 @@ Por favor:
 2. Delega todos los detalles específicos de los ejercicios del ciclo de 3 días al bloque JSON final.
 3. Organiza los ejercicios asignando a 'routineName' el día correspondiente del ciclo, exactamente como: "Día 1: [Enfoque]", "Día 2: [Enfoque]", "Día 3: [Enfoque]". Asegúrate de crear ejercicios para los 3 días en el array de rutinas.`;
     }
-    
-    await sendMessage(prompt);
+
+    const displayText = progType === "single"
+      ? `🏋️ Rutina · ${type} · ${muscleOrSplit} · ${level} · ${duration}`
+      : `🔄 Ciclo 3 días · ${type} · ${muscleOrSplit} · ${level} · ${duration}/sesión`;
+
+    await sendMessage(prompt, displayText);
   };
 
-  const sendMessage = async (text?: string) => {
+  const sendMessage = async (text?: string, displayText?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || loading) return;
 
-    const userMsg: Message = { role: "user", content: msg };
+    const userMsg: Message = { role: "user", content: msg, displayContent: displayText };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
@@ -278,14 +284,25 @@ Por favor:
   const handleReset = () => {
     setMessages([]);
     setOnboardingStep("initial");
-    setProgramType(null);
-    setSelectedType(null);
-    setSelectedLevel(null);
-    setSelectedDuration(null);
-    setSelectedMuscle(null);
+    setProgramType("single");
+    setSelectedType("Fuerza / Pesas");
+    setSelectedLevel("Intermedio");
+    setSelectedDuration("60 min");
+    setSelectedMuscle("Full Body / Completo");
     setStepHistory([]);
     setActiveTabs({});
     setCreatedWorkoutLinks({});
+  };
+
+  // Switch program mode and keep a valid focus default for the mode
+  const switchProgramType = (mode: "single" | "cycle") => {
+    setProgramType(mode);
+    if (mode === "single" && !MUSCLE_GROUPS.some((m) => m.label === selectedMuscle)) {
+      setSelectedMuscle(MUSCLE_GROUPS[0].label);
+    }
+    if (mode === "cycle" && !CYCLE_SPLITS.some((s) => s.label === selectedMuscle)) {
+      setSelectedMuscle(CYCLE_SPLITS[0].label);
+    }
   };
 
   const handleSurpriseMe = () => {
@@ -293,53 +310,23 @@ Por favor:
     const randomType = WORKOUT_TYPES[Math.floor(Math.random() * WORKOUT_TYPES.length)];
     const randomLevel = LEVELS[Math.floor(Math.random() * LEVELS.length)];
     const randomDuration = DURATIONS[Math.floor(Math.random() * DURATIONS.length)];
+    const randomFocus = isCycle
+      ? CYCLE_SPLITS[Math.floor(Math.random() * CYCLE_SPLITS.length)]
+      : MUSCLE_GROUPS[Math.floor(Math.random() * MUSCLE_GROUPS.length)];
 
-    if (isCycle) {
-      const randomSplit = CYCLE_SPLITS[Math.floor(Math.random() * CYCLE_SPLITS.length)];
-      setSelectedType(randomType.label);
-      setSelectedLevel(randomLevel.id);
-      setSelectedDuration(randomDuration.label);
-      setSelectedMuscle(randomSplit.label);
-      setProgramType("cycle");
-      setOnboardingStep("done");
+    setProgramType(isCycle ? "cycle" : "single");
+    setSelectedType(randomType.label);
+    setSelectedLevel(randomLevel.id);
+    setSelectedDuration(randomDuration.label);
+    setSelectedMuscle(randomFocus.label);
 
-      const introText = `🎲 **¡Sorpresa! He seleccionado de forma aleatoria un ciclo de 3 días:**\n\n` +
-        `- **Tipo de Ciclo:** ${randomType.emoji} ${randomType.label}\n` +
-        `- **Nivel:** ${randomLevel.emoji} ${randomLevel.label}\n` +
-        `- **Duración:** ${randomDuration.emoji} ${randomDuration.label} por sesión\n` +
-        `- **Split de Entrenamiento:** ${randomSplit.emoji} ${randomSplit.label}\n\n` +
-        `Generando tu ciclo de 3 días con el equipamiento del gimnasio...`;
-
-      setMessages([{ role: "assistant", content: introText }]);
-
-      const prompt = `Soy coach y necesito crear un **Ciclo de Entrenamiento de 3 días** del tipo **${randomType.label}** de nivel **${randomLevel.id}** con una duración de **${randomDuration.label}** por sesión. El split de entrenamiento es **${randomSplit.label}**.
-Diseña el ciclo completo usando solo el equipo disponible en nuestro gym.
-Por favor:
-1. Proporciona únicamente un breve texto de resumen/overview explicando el objetivo general del ciclo de 3 días (máximo 1 párrafo).
-2. Delega todos los detalles específicos de los ejercicios del ciclo de 3 días al bloque JSON final.
-3. Organiza los ejercicios asignando a 'routineName' el día correspondiente del ciclo, exactamente como: "Día 1: [Enfoque]", "Día 2: [Enfoque]", "Día 3: [Enfoque]". Asegúrate de crear ejercicios para los 3 días en el array de rutinas.`;
-      sendMessage(prompt);
-    } else {
-      const randomMuscle = MUSCLE_GROUPS[Math.floor(Math.random() * MUSCLE_GROUPS.length)];
-      setSelectedType(randomType.label);
-      setSelectedLevel(randomLevel.id);
-      setSelectedDuration(randomDuration.label);
-      setSelectedMuscle(randomMuscle.label);
-      setProgramType("single");
-      setOnboardingStep("done");
-
-      const introText = `🎲 **¡Sorpresa! He seleccionado de forma aleatoria la siguiente configuración:**\n\n` +
-        `- **Tipo de Rutina:** ${randomType.emoji} ${randomType.label}\n` +
-        `- **Nivel del Alumno:** ${randomLevel.emoji} ${randomLevel.label}\n` +
-        `- **Duración:** ${randomDuration.emoji} ${randomDuration.label}\n` +
-        `- **Enfoque muscular:** ${randomMuscle.emoji} ${randomMuscle.label}\n\n` +
-        `Generando tu rutina personalizada con el equipamiento del gimnasio...`;
-
-      setMessages([{ role: "assistant", content: introText }]);
-
-      const prompt = `Soy coach y necesito crear una rutina de **${randomType.label}** enfocada en **${randomMuscle.label}** de nivel **${randomLevel.id}** para una duración de **${randomDuration.label}**. Diseña una rutina usando solo el equipo disponible en nuestro gym. Por favor, proporciona únicamente un breve texto de resumen/overview y delega todos los detalles y estructura específica de la rutina al bloque JSON final, sin repetir la lista de ejercicios en tu respuesta de texto.`;
-      sendMessage(prompt);
-    }
+    completeOnboarding(
+      isCycle ? "cycle" : "single",
+      randomType.label,
+      randomLevel.id,
+      randomDuration.label,
+      randomFocus.label
+    );
   };
 
   const handleSaveProposedRoutine = async (index: number, toolCallData: any) => {
@@ -409,245 +396,110 @@ Por favor:
     return groups;
   };
 
-  // Onboarding Panel Renderer
+  // Onboarding Panel Renderer — single premium config screen
+  const focusOptions = programType === "single" ? MUSCLE_GROUPS : CYCLE_SPLITS;
+
   const renderOnboarding = () => {
-    const stepIndex = getStepIndex();
-    
+    const Chip = ({ active, onClick, emoji, label }: { active: boolean; onClick: () => void; emoji: string; label: string }) => (
+      <button
+        onClick={onClick}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-all duration-200 cursor-pointer ${
+          active
+            ? "bg-primary/15 border-primary/50 text-white shadow-sm shadow-primary/10"
+            : "bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:border-primary/25 hover:text-white"
+        }`}
+      >
+        <span className="text-base leading-none flex-shrink-0">{emoji}</span>
+        <span className="text-[11px] font-bold leading-tight">{label}</span>
+      </button>
+    );
+
     return (
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col justify-center bg-zinc-950/20">
-        {onboardingStep !== "done" && (
-          <div className="space-y-6 max-w-md mx-auto w-full">
-            {/* Header / Nav */}
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-900">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">Diseño Asistido</p>
-                <h3 className="text-sm font-bold text-white mt-0.5">Configura tu entrenamiento</h3>
-              </div>
-              {onboardingStep !== "initial" && (
-                <button
-                  onClick={goBack}
-                  className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-805 border border-zinc-800 rounded transition-all cursor-pointer"
-                >
-                  ← Volver
-                </button>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            {stepIndex > 0 && (
-              <div className="w-full space-y-1.5">
-                <div className="flex justify-between items-center text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
-                  <span>Paso {stepIndex} de 5</span>
-                  <span>{Math.round((stepIndex / 5) * 100)}% Completado</span>
-                </div>
-                <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-300 rounded-full"
-                    style={{ width: `${(stepIndex / 5) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 0: Mode Selection */}
-            {onboardingStep === "initial" && (
-              <div className="space-y-3">
-                <button
-                  onClick={() => goToStep("program")}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-lg border bg-zinc-900/30 border-zinc-800 text-zinc-300 hover:border-primary/40 hover:bg-primary/5 hover:text-white transition-all duration-200 text-left cursor-pointer"
-                >
-                  <span className="text-2xl flex-shrink-0">📋</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-white uppercase tracking-wider">Asistente Guiado (Manual)</p>
-                    <p className="text-[10px] text-zinc-500 mt-1">Crea entrenamientos personalizados paso a paso.</p>
-                  </div>
-                  <ChevronRight size={14} className="text-zinc-600 flex-shrink-0" />
-                </button>
-
-                <button
-                  onClick={handleSurpriseMe}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-lg border bg-gradient-to-r from-primary/10 to-transparent border-primary/25 text-zinc-300 hover:border-primary/45 hover:bg-primary/15 hover:text-white transition-all duration-200 text-left relative overflow-hidden cursor-pointer"
-                >
-                  <span className="text-2xl flex-shrink-0">🎲</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-white uppercase tracking-wider">Sorpréndeme (AI Magic)</p>
-                    <p className="text-[10px] text-zinc-500 mt-1">El coach diseñará una rutina o ciclo aleatorio al instante.</p>
-                  </div>
-                  <ChevronRight size={14} className="text-primary flex-shrink-0 animate-pulse" />
-                </button>
-              </div>
-            )}
-
-            {/* Step 1: Program Type */}
-            {onboardingStep === "program" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">¿Qué tipo de estructura deseas?</p>
-                <div className="grid grid-cols-1 gap-2.5">
-                  <button
-                    onClick={() => {
-                      setProgramType("single");
-                      goToStep("type");
-                    }}
-                    className="flex items-center gap-4 px-4 py-3.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-350 hover:border-primary/40 hover:bg-primary/5 hover:text-white cursor-pointer"
-                  >
-                    <span className="text-2xl flex-shrink-0">🏋️‍♂️</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white uppercase tracking-wider">Sesión Única</p>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Una rutina enfocada para un día de entrenamiento.</p>
-                    </div>
-                    <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setProgramType("cycle");
-                      goToStep("type");
-                    }}
-                    className="flex items-center gap-4 px-4 py-3.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-350 hover:border-primary/40 hover:bg-primary/5 hover:text-white cursor-pointer"
-                  >
-                    <span className="text-2xl flex-shrink-0">🔄</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white uppercase tracking-wider">Ciclo Semanal (3 Días)</p>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Un microciclo completo de 3 sesiones complementarias.</p>
-                    </div>
-                    <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Workout Type */}
-            {onboardingStep === "type" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">¿Cuál es la modalidad principal?</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {WORKOUT_TYPES.map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => {
-                        setSelectedType(type.label);
-                        goToStep("level");
-                      }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-350 hover:border-primary/30 hover:bg-primary/5 hover:text-white cursor-pointer"
-                    >
-                      <span className="text-lg leading-none">{type.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white">{type.label}</p>
-                        <p className="text-[10px] text-zinc-500 mt-0.5">{type.desc}</p>
-                      </div>
-                      <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Level */}
-            {onboardingStep === "level" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">Nivel del alumno objetivo</p>
-                <div className="flex flex-col gap-2">
-                  {LEVELS.map((level) => (
-                    <button
-                      key={level.id}
-                      onClick={() => {
-                        setSelectedLevel(level.id);
-                        goToStep("duration");
-                      }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-350 hover:border-primary/30 hover:bg-primary/5 hover:text-white cursor-pointer"
-                    >
-                      <span className="text-lg">{level.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white">{level.label}</p>
-                        <p className="text-[10px] text-zinc-500 mt-0.5">{level.desc}</p>
-                      </div>
-                      <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Duration */}
-            {onboardingStep === "duration" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">Duración de la sesión</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {DURATIONS.map((dur) => (
-                    <button
-                      key={dur.id}
-                      onClick={() => {
-                        setSelectedDuration(dur.label);
-                        if (programType === "single") {
-                          goToStep("muscle");
-                        } else {
-                          goToStep("cycleSplit");
-                        }
-                      }}
-                      className="flex flex-col items-center justify-center gap-1.5 px-3 py-3 rounded-lg border text-center transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-350 hover:border-primary/30 hover:bg-primary/5 hover:text-white cursor-pointer"
-                    >
-                      <span className="text-xl">{dur.emoji}</span>
-                      <p className="text-xs font-bold text-white">{dur.label}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 5 (Single): Muscle Group */}
-            {onboardingStep === "muscle" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">Grupo Muscular Principal</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {MUSCLE_GROUPS.map((muscle) => (
-                    <button
-                      key={muscle.id}
-                      onClick={() => {
-                        setSelectedMuscle(muscle.label);
-                        completeOnboarding("single", selectedType!, selectedLevel!, selectedDuration!, muscle.label);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-355 hover:border-primary/30 hover:bg-primary/5 hover:text-white cursor-pointer"
-                    >
-                      <span className="text-lg leading-none">{muscle.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white">{muscle.label}</p>
-                        <p className="text-[10px] text-zinc-500 mt-0.5">{muscle.desc}</p>
-                      </div>
-                      <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 5 (Cycle): Split selection */}
-            {onboardingStep === "cycleSplit" && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <p className="text-xs font-bold text-zinc-350 mb-2 uppercase tracking-wider text-center">Distribución del Ciclo (Split)</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {CYCLE_SPLITS.map((split) => (
-                    <button
-                      key={split.id}
-                      onClick={() => {
-                        setSelectedMuscle(split.label);
-                        completeOnboarding("cycle", selectedType!, selectedLevel!, selectedDuration!, split.label);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all duration-200 bg-zinc-900/30 border-zinc-800 text-zinc-355 hover:border-primary/30 hover:bg-primary/5 hover:text-white cursor-pointer"
-                    >
-                      <span className="text-lg leading-none">{split.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-white">{split.label}</p>
-                        <p className="text-[10px] text-zinc-500 mt-0.5">{split.desc}</p>
-                      </div>
-                      <ChevronRight size={14} className="ml-auto text-primary flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
+      <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col justify-center bg-zinc-950/20">
+        <div className="space-y-5 max-w-lg mx-auto w-full">
+          {/* Header */}
+          <div className="text-center space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary">Coach IA</p>
+            <h3 className="text-lg font-black text-white">Diseña tu entrenamiento</h3>
+            <p className="text-[11px] text-zinc-500">Ajusta lo que quieras y genera. Todo tiene un valor por defecto.</p>
           </div>
-        )}
+
+          {/* Mode toggle */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-900/60 rounded-xl border border-white/5">
+            <button
+              onClick={() => switchProgramType("single")}
+              className={`py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all ${
+                programType === "single" ? "bg-primary text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              🏋️ Sesión Única
+            </button>
+            <button
+              onClick={() => switchProgramType("cycle")}
+              className={`py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all ${
+                programType === "cycle" ? "bg-primary text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              🔄 Ciclo 3 Días
+            </button>
+          </div>
+
+          {/* Modalidad */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Modalidad</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {WORKOUT_TYPES.map((t) => (
+                <Chip key={t.id} active={selectedType === t.label} onClick={() => setSelectedType(t.label)} emoji={t.emoji} label={t.label} />
+              ))}
+            </div>
+          </div>
+
+          {/* Nivel + Duración */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Nivel</p>
+              <div className="flex flex-col gap-2">
+                {LEVELS.map((l) => (
+                  <Chip key={l.id} active={selectedLevel === l.id} onClick={() => setSelectedLevel(l.id)} emoji={l.emoji} label={l.label} />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Duración</p>
+              <div className="grid grid-cols-2 gap-2">
+                {DURATIONS.map((d) => (
+                  <Chip key={d.id} active={selectedDuration === d.label} onClick={() => setSelectedDuration(d.label)} emoji={d.emoji} label={d.label} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Enfoque (muscle group or cycle split) */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">{programType === "single" ? "Enfoque muscular" : "Distribución del ciclo"}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {focusOptions.map((o) => (
+                <Chip key={o.id} active={selectedMuscle === o.label} onClick={() => setSelectedMuscle(o.label)} emoji={o.emoji} label={o.label} />
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              onClick={() => completeOnboarding(programType, selectedType, selectedLevel, selectedDuration, selectedMuscle)}
+              className="w-full bg-primary text-white font-black uppercase tracking-wider text-sm h-12 rounded-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
+            >
+              <Zap size={15} /> Generar {programType === "cycle" ? "Ciclo" : "Rutina"}
+            </Button>
+            <button
+              onClick={handleSurpriseMe}
+              className="w-full flex items-center justify-center gap-2 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-primary transition-colors cursor-pointer"
+            >
+              🎲 Sorpréndeme
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -801,32 +653,33 @@ Por favor:
                             )}
 
                             {/* Exercises List (only current active tab) */}
-                            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                            <div className="space-y-2">
                               {currentExercises.map((r: any, rIdx: number) => (
-                                <div key={rIdx} className="bg-zinc-900/60 p-2.5 rounded-md border border-zinc-900">
-                                  <div className="font-bold text-zinc-200 flex items-center gap-1.5 text-[11px]">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                                    {r.exerciseName}
+                                <div key={rIdx} className="bg-zinc-900/60 p-2.5 rounded-md border border-zinc-900 space-y-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {r.section && (
+                                      <span className={`text-[7px] font-extrabold uppercase px-1 py-0.5 rounded border ${
+                                        r.section === 'Calentamiento' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                        r.section === 'Principal' ? 'bg-primary/10 text-primary border-primary/20' :
+                                        r.section === 'Finalizador' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                        r.section === 'WOD' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                        r.section === 'Skill/Fuerza' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                        'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                                      }`}>{r.section}</span>
+                                    )}
+                                    <span className="font-bold text-zinc-200 text-[11px]">{r.exerciseName}</span>
                                   </div>
-                                  <div className="text-[9px] text-zinc-400 mt-1 flex gap-2 font-semibold flex-wrap">
-                                    <span className="text-primary">{r.sets} series</span>
-                                    <span>·</span>
-                                    <span>{r.reps} reps</span>
-                                    {r.intensityPct && (
-                                      <>
-                                        <span>·</span>
-                                        <span className="text-orange-400">{r.intensityPct}% RM</span>
-                                      </>
-                                    )}
-                                    {r.restSeconds && (
-                                      <>
-                                        <span>·</span>
-                                        <span className="text-cyan-400">{r.restSeconds}s desc.</span>
-                                      </>
-                                    )}
+                                  <div className="text-[9px] text-zinc-400 flex gap-2 font-semibold flex-wrap items-center">
+                                    <span className="text-primary font-bold">{r.sets}×{r.reps}</span>
+                                    {r.intensityPct ? (
+                                      <span className="text-orange-400 flex items-center gap-0.5"><Flame size={7} />{r.intensityPct}% RM</span>
+                                    ) : null}
+                                    {r.restSeconds ? (
+                                      <span className="text-cyan-400 flex items-center gap-0.5"><Clock size={7} />{r.restSeconds}s desc.</span>
+                                    ) : null}
                                   </div>
                                   {r.description && (
-                                    <p className="text-[9px] text-zinc-500 mt-1.5 italic leading-relaxed">{r.description}</p>
+                                    <p className="text-[9px] text-zinc-500 italic leading-relaxed">{r.description}</p>
                                   )}
                                 </div>
                               ))}
@@ -875,23 +728,58 @@ Por favor:
                       })()
                     )}
                   </>
-                ) : msg.content}
+                ) : (msg.displayContent || msg.content.replace(/\*\*(.+?)\*\*/g, "$1").replace(/[*`]/g, ""))}
               </div>
             </div>
           ))}
 
-          {loading && (
-            <div className="flex gap-2.5 flex-row">
-              <div className="w-6.5 h-6.5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Bot size={12} className="text-primary" />
+          {loading && (() => {
+            const lastUser = messages[messages.length - 1];
+            const isGenerating = lastUser?.role === "user" && !!lastUser.displayContent;
+            return (
+              <div className="flex gap-2.5 flex-row">
+                <div className="w-6.5 h-6.5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot size={12} className="text-primary animate-pulse" />
+                </div>
+                <div className="flex-1 max-w-[85%] space-y-3">
+                  {/* Status line */}
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-primary">
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                    {isGenerating ? "Diseñando tu entrenamiento…" : "Pensando…"}
+                  </div>
+
+                  {/* Skeleton preview of the routine being built */}
+                  {isGenerating ? (
+                    <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/90 space-y-2.5">
+                      <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                        <div className="h-2.5 w-28 rounded bg-zinc-800 animate-pulse" />
+                        <div className="h-3 w-16 rounded bg-zinc-800/80 animate-pulse" />
+                      </div>
+                      {[0, 1, 2].map((k) => (
+                        <div key={k} className="bg-zinc-900/60 p-2.5 rounded-md border border-zinc-900 space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-2.5 w-16 rounded bg-zinc-800/70 animate-pulse" />
+                            <div className="h-2.5 w-32 rounded bg-zinc-800 animate-pulse" />
+                          </div>
+                          <div className="h-2 w-24 rounded bg-zinc-800/60 animate-pulse" />
+                          <div className="h-2 w-full rounded bg-zinc-800/40 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="h-2.5 w-3/4 rounded bg-zinc-800/70 animate-pulse" />
+                      <div className="h-2.5 w-1/2 rounded bg-zinc-800/50 animate-pulse" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-lg rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
