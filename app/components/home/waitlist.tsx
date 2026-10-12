@@ -31,10 +31,10 @@ export function NowOpenSection() {
             loop
             playsInline
             preload="auto"
-            poster="/magnesio-poster.jpg"
+            poster="/page-precios.jpg"
             className="size-full object-cover"
           >
-            <source src="/magnesio-web.mp4" type="video/mp4" />
+            <source src="/page-precios.mp4" type="video/mp4" />
           </video>
         )}
         <div className="absolute inset-0 bg-black/70" />

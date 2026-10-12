@@ -1,5 +1,8 @@
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
+import { PageHero } from "~/components/page-hero";
+import { animate, useInView, useReducedMotion } from "motion/react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Check } from "lucide-react";
 import type { Route } from "./+types/precios";
@@ -175,6 +178,27 @@ function PlanCard({ plan, groupLabel, index }: { plan: Plan; groupLabel: string;
   );
 }
 
+// Counts up to the amount the first time it scrolls into view
+function CountUp({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!inView || reduceMotion) return;
+    const controls = animate(0, value, {
+      duration: 1.4,
+      ease: [0.23, 1, 0.32, 1],
+      onUpdate: (current) => {
+        if (ref.current) ref.current.textContent = formatCLP(Math.round(current));
+      },
+    });
+    return () => controls.stop();
+  }, [inView, reduceMotion, value]);
+
+  return <span ref={ref}>{formatCLP(value)}</span>;
+}
+
 function ModuleHeader({ tag, title, subtitle }: { tag: string; title: string; subtitle: string }) {
   return (
     <div className="mb-10 reveal">
@@ -224,32 +248,12 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
 
   return (
     <Layout>
-      {/* Page Header — Video Background */}
-      <div className="relative isolate overflow-hidden h-[60dvh] min-h-[420px]">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="/magnesio-poster.jpg"
-          aria-hidden
-          className="absolute inset-0 -z-10 size-full object-cover"
-        >
-          <source src="/magnesio-web.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 -z-10 bg-black/75" />
-
-        <div className="h-full flex flex-col items-center justify-center text-center px-6">
-          <p className="eyebrow mb-6">{settings.pricing_hero_badge || "Arquitectura de Precios"}</p>
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl uppercase text-white mb-4 leading-none">
-            {heroTitle}
-          </h1>
-          <p className="text-base md:text-lg text-gray-200 max-w-xl mx-auto">
-            {settings.pricing_hero_subtitle || "Sin cargos ocultos. Sin contratos largos. Solo resultados."}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        media="page-precios"
+        eyebrow={settings.pricing_hero_badge || "Arquitectura de Precios"}
+        title={heroTitle}
+        subtitle={settings.pricing_hero_subtitle || "Sin cargos ocultos. Sin contratos largos. Solo resultados."}
+      />
 
       <Section className="bg-zinc-950">
         {/* ─── MODULE 1: TRAINO BOX ─── */}
@@ -364,7 +368,7 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
                       <p className="text-sm text-gray-300 leading-relaxed">
                         Una sola membresía en vez de dos:{" "}
                         <span className="text-primary font-bold">
-                          ahorras {formatCLP(savings)} al mes.
+                          ahorras <CountUp value={savings} /> al mes.
                         </span>
                       </p>
                     </div>

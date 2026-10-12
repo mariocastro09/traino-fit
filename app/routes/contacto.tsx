@@ -1,5 +1,6 @@
 import { Layout, WhatsAppIcon } from "~/components/layout";
 import { Section } from "~/components/ui/section";
+import { PageHero } from "~/components/page-hero";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { MapPin, Phone, Instagram, Clock, ArrowRight, Check, Calendar, Dumbbell, Users, Zap } from "lucide-react";
@@ -105,20 +106,19 @@ export default function Contacto() {
 
   return (
     <Layout>
+      <PageHero
+        media="page-contacto"
+        eyebrow="Contacto y dirección"
+        title={<>Hablemos de tu <span className="text-primary">cambio</span>.</>}
+        subtitle={
+          plan
+            ? `Elegiste el plan ${plan}. Déjanos tus datos y te contactamos para activarlo; tu primera clase es gratis.`
+            : "Visita nuestras instalaciones en Puente Alto o envíanos un mensaje para agendar tu primera clase gratis."
+        }
+      />
+
       <Section className="bg-zinc-950 text-white">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-16 border-b border-white/10 pb-10">
-            <p className="eyebrow mb-3">Contacto & Dirección</p>
-            <h1 className="font-display text-6xl sm:text-8xl uppercase leading-none mb-4">
-              Hablemos de tu <span className="text-primary">cambio</span>.
-            </h1>
-            <p className="text-base text-gray-400 max-w-xl">
-              {plan
-                ? `Elegiste el plan ${plan}. Déjanos tus datos y te contactamos para activarlo; tu primera clase es gratis.`
-                : "Visita nuestras instalaciones en Puente Alto o envíanos un mensaje para agendar tu primera clase gratis."}
-            </p>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
             {/* Left Column - Info */}
@@ -196,7 +196,7 @@ export default function Contacto() {
 
             {/* Right Column - Form */}
             <div className="lg:col-span-7 order-first lg:order-last">
-              <div className="bg-zinc-900/60 border border-white/10 border-t-2 border-t-primary p-6 sm:p-10">
+              <div className="bg-zinc-900/60 border border-white/10 border-t-2 border-t-primary p-6 sm:p-10 reveal">
                 {status === "done" ? (
                   <div role="status" className="text-center py-12 flex flex-col items-center">
                     <span className="size-16 rounded-full bg-primary/10 border border-primary flex items-center justify-center text-primary mb-6">
@@ -386,7 +386,7 @@ function InfoBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section className="reveal">
       <h2 className="flex items-center gap-2.5 text-primary text-xs font-bold tracking-widest uppercase mb-3">
         <Icon size={18} aria-hidden />
         {title}

@@ -1,5 +1,6 @@
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
+import { PageHero } from "~/components/page-hero";
 import { Instagram, ExternalLink, Check, Dumbbell, Flame, Trophy, Users, Zap, Timer } from "lucide-react";
 import { INSTAGRAM_URL, pageMeta } from "~/lib/site";
 
@@ -30,28 +31,26 @@ const HIGHLIGHTS = [
 export default function InstagramPage() {
   return (
     <Layout>
+      <PageHero
+        media="hero-box"
+        position="28% center"
+        eyebrow="@trainofit"
+        title={<>Síguenos en <span className="text-primary">Instagram</span></>}
+        subtitle="Únete a nuestra comunidad y comparte tu progreso. Mira WODs diarios, consejos técnicos, momentos destacados y el ambiente real de Puente Alto."
+      >
+        <a
+          href={INSTAGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-dark font-black text-xs uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
+        >
+          <Instagram size={18} aria-hidden />
+          Seguir @trainofit
+          <ExternalLink size={14} aria-hidden />
+        </a>
+      </PageHero>
+
       <Section className="bg-zinc-950 text-white">
-        {/* Header */}
-        <div className="text-center mb-16 md:mb-24 max-w-3xl mx-auto">
-          <p className="eyebrow mb-4">@trainofit</p>
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl uppercase leading-none mb-6">
-            Síguenos en <span className="text-primary">Instagram</span>
-          </h1>
-          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            Únete a nuestra comunidad y comparte tu progreso. Mira WODs diarios,
-            consejos técnicos, momentos destacados y el ambiente real de Puente Alto.
-          </p>
-          <a
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-dark font-black text-xs uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
-          >
-            <Instagram size={18} aria-hidden />
-            Seguir @trainofit
-            <ExternalLink size={14} aria-hidden />
-          </a>
-        </div>
 
         {/* Community + profile preview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-5xl mx-auto mb-20">

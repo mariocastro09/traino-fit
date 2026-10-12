@@ -153,7 +153,7 @@ export function Hero({
       </div>
 
       {/* ── Copy ── */}
-      <div className="flex-1 flex flex-col justify-end w-full container mx-auto px-5 sm:px-6 pb-8 sm:pb-12">
+      <div className="flex-1 flex flex-col justify-end w-full container mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
         {announcement && (
           <p className="text-sm sm:text-base font-semibold text-primary mb-3 sm:mb-4 [text-shadow:0_1px_10px_rgb(0_0_0/0.9)] animate-fade-up">
             {announcement}

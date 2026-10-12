@@ -1,5 +1,6 @@
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
+import { PageHero } from "~/components/page-hero";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import { Link } from "react-router";
 import { Clock, User, Users, Zap, X, ChevronDown, ChevronRight, ArrowRight } from "lucide-react";
@@ -61,9 +62,26 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const activeDay = pickedDay ?? today ?? DAYS[0];
 
+  // The next class from now, looking ahead through the week
+  const [nextClass, setNextClass] = useState<ClassItem | null>(null);
+
   useEffect(() => {
-    setToday(DAYS[(new Date().getDay() + 6) % 7]);
-  }, []);
+    const now = new Date();
+    const todayIndex = (now.getDay() + 6) % 7;
+    const clock = now.toTimeString().slice(0, 5);
+    setToday(DAYS[todayIndex]);
+
+    for (let ahead = 0; ahead < 7; ahead++) {
+      const day = DAYS[(todayIndex + ahead) % 7];
+      const upcoming = loaderData.classes
+        .filter((c) => c.day === day && (ahead > 0 || c.time > clock))
+        .sort((a, b) => a.time.localeCompare(b.time))[0];
+      if (upcoming) {
+        setNextClass(upcoming);
+        break;
+      }
+    }
+  }, [loaderData.classes]);
 
   const classNames = [...new Set(loaderData.classes.map((c) => c.name))].sort();
   const classes = loaderData.classes
@@ -80,17 +98,29 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
 
   return (
     <Layout>
+      <PageHero
+        media="page-horario"
+        position="55% center"
+        eyebrow="Semana tipo"
+        title={<>Horario de <span className="text-primary">clases</span></>}
+        subtitle="Encuentra el momento perfecto para tu entrenamiento. Todas las clases están guiadas por coaches certificados."
+      >
+        {nextClass && (
+          <button
+            type="button"
+            onClick={() => setSelectedClass(nextClass)}
+            className="group inline-flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 border border-primary/50 bg-black/50 text-left hover:bg-primary/15 hover:border-primary transition-colors duration-200"
+          >
+            <span className="eyebrow">Próxima clase</span>
+            <span className="font-bold tabular-nums">
+              {nextClass.day === today ? "Hoy" : nextClass.day} {nextClass.time} · {nextClass.name}
+            </span>
+            <ArrowRight size={16} className="text-primary group-hover:translate-x-1 transition-transform duration-200" aria-hidden />
+          </button>
+        )}
+      </PageHero>
+
       <Section className="bg-zinc-950 text-white">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <p className="eyebrow mb-4">Semana tipo</p>
-          <h1 className="font-display text-6xl md:text-8xl uppercase leading-none mb-4">
-            Horario de <span className="text-primary">Clases</span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Encuentra el momento perfecto para tu entrenamiento. Todas las clases están guiadas por coaches certificados.
-          </p>
-        </div>
 
         {loaderData.classes.length === 0 ? (
           <div className="text-center py-16 border border-white/10 bg-zinc-900/40">

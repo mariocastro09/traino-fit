@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
+import { PageHero } from "~/components/page-hero";
 import { Link } from "react-router";
 import { Dumbbell, Users, Clock, Flame, TrendingUp, Heart, ArrowRight } from "lucide-react";
 import type { Route } from "./+types/clases";
@@ -98,6 +99,13 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
 
   return (
     <Layout>
+      <PageHero
+        media="page-clases"
+        eyebrow="Programas"
+        title={<>Nuestras <span className="text-primary">clases</span></>}
+        subtitle="Programas diseñados para transformar tu cuerpo y mente. Desde acondicionamiento básico hasta rendimiento de competencia."
+      />
+
       <Section className="bg-zinc-950 text-white">
         {/* Admin Banner */}
         {isAdmin && (
@@ -119,17 +127,6 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
           </div>
         )}
 
-        {/* Heading */}
-        <div className="text-center mb-16">
-          <p className="eyebrow mb-4">Programas</p>
-          <h1 className="font-display text-6xl md:text-8xl uppercase leading-none mb-4">
-            Nuestras <span className="text-primary">Clases</span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Programas diseñados para transformar tu cuerpo y mente. Desde acondicionamiento básico hasta rendimiento de competencia.
-          </p>
-        </div>
-
         {/* Classes Grid */}
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-24">
           {loaderData.classes.map((item, i) => (
@@ -144,7 +141,7 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
           </h2>
           <ol className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {EXPECTATIONS.map((step, i) => (
-              <li key={step.title} className="text-center">
+              <li key={step.title} className="text-center reveal" style={{ "--i": i + 1 } as React.CSSProperties}>
                 <span className="size-14 rounded-full bg-primary/10 border-2 border-primary/40 text-primary font-black tabular-nums flex items-center justify-center text-xl mx-auto mb-6" aria-hidden>
                   {String(i + 1).padStart(2, "0")}
                 </span>
