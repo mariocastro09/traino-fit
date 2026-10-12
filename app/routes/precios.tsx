@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { ArrowRight, Check } from "lucide-react";
 import type { Route } from "./+types/precios";
 import { d1, getActivePlans, getPublicSettings, orFallback } from "../../server/public-data";
-import { pageMeta } from "~/lib/site";
+import { pageMeta, whatsappLink } from "~/lib/site";
 import { cn } from "~/lib/utils";
 
 export function meta() {
@@ -157,7 +157,7 @@ function PlanCard({ plan, groupLabel }: { plan: Plan; groupLabel: string }) {
         </ul>
 
         <Link
-          to="/contacto"
+          to={`/contacto?plan=${encodeURIComponent(plan.name)}`}
           aria-label={`${plan.cta}: plan ${plan.name}`}
           className={cn(
             "flex items-center justify-center gap-2 py-3 font-black text-xs uppercase tracking-widest transition-colors duration-200",
@@ -317,7 +317,7 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
                   </p>
 
                   <Link
-                    to="/contacto"
+                    to={`/contacto?plan=${encodeURIComponent(athletePlan.name)}`}
                     id="plan-athlete-cta"
                     className="inline-flex items-center justify-center gap-3 w-full sm:w-auto px-10 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-sm uppercase tracking-widest transition-colors duration-200"
                   >
@@ -377,9 +377,14 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
         {/* FAQ Note */}
         <p className="mt-16 text-center text-gray-400 text-sm">
           ¿Tienes preguntas sobre nuestros planes?{" "}
-          <Link to="/contacto" className="text-primary underline underline-offset-4 hover:text-primary-300">
-            Contáctanos por WhatsApp
-          </Link>{" "}
+          <a
+            href={whatsappLink("Hola TrainoFit! Necesito ayuda para elegir un plan.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-4 hover:text-primary-300"
+          >
+            Escríbenos por WhatsApp
+          </a>{" "}
           y te ayudamos a elegir.
         </p>
       </Section>

@@ -30,6 +30,9 @@ export function NowOpenSection() {
             Ver horarios
           </Link>
         </div>
+        <p className="mt-5 text-sm text-gray-400">
+          Sin compromiso. Te confirmamos el horario por WhatsApp.
+        </p>
       </div>
     </Section>
   );

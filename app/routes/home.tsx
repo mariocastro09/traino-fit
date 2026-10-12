@@ -37,7 +37,7 @@ export function meta({}: Route.MetaArgs) {
         "@type": "ExerciseGym",
         name: SITE_NAME,
         url: SITE_URL,
-        image: `${SITE_URL}/deadlift-poster.jpg`,
+        image: `${SITE_URL}/hero-gym.jpg`,
         telephone: `+${WHATSAPP_NUMBER}`,
         hasMap: MAPS_LINK,
         sameAs: [INSTAGRAM_URL],

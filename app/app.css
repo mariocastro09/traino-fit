@@ -10,7 +10,6 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: "Bebas Neue", "Impact", "Arial Black", sans-serif;
   --breakpoint-xs: 30rem;
-  --animate-marquee: marquee 40s linear infinite;
 
   /* Elegant Gold/Mustard Color Scheme - Dark Theme */
   --color-primary: oklch(0.72 0.13 80);
@@ -114,12 +113,6 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
   }
 }
 

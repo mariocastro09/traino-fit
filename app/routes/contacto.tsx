@@ -49,6 +49,8 @@ export default function Contacto() {
   const initialClase = searchParams.get("clase") || "hybrid";
   const dia = searchParams.get("dia") || "";
   const hora = searchParams.get("hora") || "";
+  // Set when the visitor arrives from a plan on the pricing page
+  const plan = searchParams.get("plan") || "";
 
   // A class picked on the schedule page arrives by name and becomes an extra option.
   const options = CLASS_OPTIONS.some((o) => o.id === initialClase)
@@ -64,11 +66,15 @@ export default function Contacto() {
   const claseLabel = options.find((o) => o.id === clase)?.name ?? clase;
   const slot = dia && hora ? ` el día ${dia} a las ${hora}` : "";
   // Until the visitor types, the message follows the selected class and slot.
+  const planNote = plan ? ` Me interesa el plan ${plan}.` : "";
   const mensajeValue =
-    mensaje ?? (slot ? `Hola, me interesa agendar una clase de prueba de ${claseLabel}${slot}.` : "");
+    mensaje ??
+    (slot
+      ? `Hola, me interesa agendar una clase de prueba de ${claseLabel}${slot}.`
+      : planNote.trim());
   const waText = `Hola TrainoFit! Me interesa agendar mi clase de prueba gratis de ${claseLabel}${
     slot ? ` para${slot}` : ""
-  }.`;
+  }.${planNote}`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -108,7 +114,9 @@ export default function Contacto() {
               Hablemos de tu <span className="text-primary">cambio</span>.
             </h1>
             <p className="text-base text-gray-400 max-w-xl">
-              Visita nuestras instalaciones en Puente Alto o envíanos un mensaje para agendar tu primera clase gratis.
+              {plan
+                ? `Elegiste el plan ${plan}. Déjanos tus datos y te contactamos para activarlo; tu primera clase es gratis.`
+                : "Visita nuestras instalaciones en Puente Alto o envíanos un mensaje para agendar tu primera clase gratis."}
             </p>
           </div>
 
@@ -257,7 +265,7 @@ export default function Contacto() {
                     {activeTab === "form" ? (
                       <>
                         <h2 className="font-display text-4xl uppercase text-primary mb-2">
-                          Reservar primera clase gratis
+                          Reserva tu primera clase gratis
                         </h2>
                         <p className="text-sm text-gray-400 mb-8 leading-relaxed">
                           Completa el formulario. Un coach se comunicará contigo por WhatsApp para agendar tu bloque de entrenamiento.
@@ -319,7 +327,7 @@ export default function Contacto() {
                               aria-describedby={error ? "contacto-error" : undefined}
                               className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-dark font-black text-xs tracking-widest uppercase hover:bg-primary-300 transition-colors duration-200 disabled:opacity-60"
                             >
-                              {status === "sending" ? "Enviando…" : "Confirmar reserva gratuita"}
+                              {status === "sending" ? "Enviando…" : "Reservar mi clase gratis"}
                               <ArrowRight size={14} aria-hidden />
                             </button>
                             <p id="contacto-error" role="alert" className="text-red-400 text-sm mt-3 empty:hidden">

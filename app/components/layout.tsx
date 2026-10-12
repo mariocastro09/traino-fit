@@ -31,7 +31,7 @@ export function WhatsAppIcon({ className }: { className?: string }) {
 function Logo({ className }: { className?: string }) {
   return (
     <Link to="/" className={cn("inline-flex items-center gap-3", className)}>
-      <span className="bg-primary/10 p-2 rounded-full border-2 border-primary/30">
+      <span className="shrink-0 bg-primary/10 p-2 rounded-full border-2 border-primary/30">
         <img
           src="/traino-svg.svg"
           alt=""
@@ -44,7 +44,7 @@ function Logo({ className }: { className?: string }) {
           }}
         />
       </span>
-      <span className="font-display text-3xl leading-none text-white">
+      <span className="font-display text-3xl leading-none text-white max-[379px]:sr-only">
         TRAIN<span className="text-primary">O</span>FIT
       </span>
     </Link>
@@ -111,12 +111,12 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-dark/95 backdrop-blur-md border-b border-white/10">
-      <nav aria-label="Principal" className="container mx-auto px-6 py-4">
+      <nav aria-label="Principal" className="container mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <Logo />
 
           {/* Desktop Navigation */}
-          <ul className="hidden md:flex items-center gap-8">
+          <ul className="hidden lg:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
                 <NavLink
@@ -146,22 +146,34 @@ function Header() {
             )}
           </ul>
 
+          {/* The site's one primary action stays reachable on every page */}
+          <div className="flex items-center gap-2">
+            {pathname !== "/contacto" && (
+              <Link
+                to="/contacto"
+                className="px-4 py-2.5 bg-primary text-dark font-black text-xs uppercase tracking-wider whitespace-nowrap hover:bg-primary-300 transition-colors duration-200"
+              >
+                Clase gratis
+              </Link>
+            )}
+
           {/* Mobile Menu Button */}
           <button
             type="button"
             onClick={() => setMenuOpenAt(menuOpen ? null : pathname)}
-            className="md:hidden p-2 text-light hover:text-primary transition-colors duration-200"
+            className="lg:hidden p-2 text-light hover:text-primary transition-colors duration-200"
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
             aria-controls="menu-movil"
           >
             {menuOpen ? <X size={24} aria-hidden /> : <Menu size={24} aria-hidden />}
           </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
         {menuOpen && (
-          <ul id="menu-movil" className="md:hidden pt-4 pb-2 border-t border-white/10 mt-4">
+          <ul id="menu-movil" className="lg:hidden pt-4 pb-2 border-t border-white/10 mt-4">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
                 <NavLink

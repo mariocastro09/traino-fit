@@ -39,7 +39,7 @@ export function pageMeta({
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: url },
-    { property: "og:image", content: `${SITE_URL}/deadlift-poster.jpg` },
+    { property: "og:image", content: `${SITE_URL}/hero-gym.jpg` },
     { name: "twitter:card", content: "summary_large_image" },
   ];
 }

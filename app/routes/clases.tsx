@@ -168,7 +168,7 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
               to="/contacto"
               className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-sm uppercase tracking-widest transition-colors duration-200"
             >
-              Reservar Clase Gratuita
+              Reservar mi clase gratis
               <ArrowRight size={16} aria-hidden />
             </Link>
           </div>

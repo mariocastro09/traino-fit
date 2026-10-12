@@ -20,14 +20,14 @@ export function InstagramPreview() {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
+            className="inline-flex items-center gap-3 px-8 py-4 border border-primary text-primary font-black text-sm uppercase tracking-widest hover:bg-primary/10 transition-colors duration-200"
           >
             <Instagram size={20} aria-hidden />
             @trainofit
           </a>
           <Link
             to="/instagram"
-            className="inline-flex items-center gap-2 px-8 py-4 border border-white/30 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 hover:border-white/60 transition-colors duration-200"
+            className="inline-flex items-center gap-2 px-4 py-4 text-white font-bold text-sm uppercase tracking-widest underline underline-offset-8 decoration-white/40 hover:decoration-white transition-colors duration-200"
           >
             Ver galería
             <ArrowRight size={16} aria-hidden />

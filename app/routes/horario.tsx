@@ -152,6 +152,10 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
               )}
             </div>
 
+            <p className="text-center text-sm text-gray-300 mb-6">
+              Elige una clase del horario para reservar tu primera sesión gratis.
+            </p>
+
             {/* Legend */}
             <ul className="flex flex-wrap justify-center gap-3 mb-10">
               {Object.values(LEVELS).map((level) => (
@@ -363,7 +367,7 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
               to={`/contacto?clase=${encodeURIComponent(selectedClass.name)}&dia=${encodeURIComponent(selectedClass.day)}&hora=${encodeURIComponent(selectedClass.time)}`}
               className="mt-4 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-xs tracking-widest uppercase transition-colors duration-200 flex items-center justify-center gap-2"
             >
-              Reservar esta Clase
+              Reservar esta clase gratis
               <ArrowRight size={14} aria-hidden />
             </Link>
           </DialogContent>
