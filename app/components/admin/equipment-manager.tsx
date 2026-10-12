@@ -211,7 +211,7 @@ export function EquipmentManager() {
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="bg-primary text-white hover:bg-primary/90 font-bold text-xs uppercase tracking-wider px-4 flex items-center gap-2 flex-shrink-0"
+          className="bg-primary text-dark hover:bg-primary/90 font-bold text-xs uppercase tracking-wider px-4 flex items-center gap-2 flex-shrink-0"
         >
           <Plus size={14} /> Añadir Equipo
         </Button>
@@ -230,7 +230,7 @@ export function EquipmentManager() {
           <p className="text-xs text-light/40 max-w-xs text-center">
             Registra el inventario del gym para que el Coach IA sepa qué ejercicios puede recomendar.
           </p>
-          <Button onClick={handleOpenAdd} className="mt-2 bg-primary text-white text-xs font-bold">
+          <Button onClick={handleOpenAdd} className="mt-2 bg-primary text-dark text-xs font-bold">
             <Plus size={12} className="mr-1" /> Añadir primer equipo
           </Button>
         </div>
@@ -399,7 +399,7 @@ export function EquipmentManager() {
               <Button
                 onClick={handleSave}
                 disabled={!form.name.trim()}
-                className="bg-primary text-white hover:bg-primary/90 font-bold text-xs"
+                className="bg-primary text-dark hover:bg-primary/90 font-bold text-xs"
               >
                 <Check size={13} className="mr-1" />
                 {editingId ? "Actualizar" : "Añadir al Inventario"}

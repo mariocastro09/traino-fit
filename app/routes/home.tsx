@@ -5,52 +5,68 @@ import { HybridProblem } from "~/components/home/hybrid-problem";
 import { ThreePillars } from "~/components/home/three-pillars";
 import { WaitlistSection } from "~/components/home/waitlist";
 import { InstagramPreview } from "~/components/home/instagram-preview";
+import { d1, getPublicSettings, orFallback } from "../../server/public-data";
+import {
+  INSTAGRAM_URL,
+  MAPS_LINK,
+  SITE_NAME,
+  SITE_URL,
+  WHATSAPP_NUMBER,
+  pageMeta,
+} from "~/lib/site";
+
+export async function loader({ context }: Route.LoaderArgs) {
+  return { settings: await orFallback(() => getPublicSettings(d1(context)), {}) };
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
+    ...pageMeta({
+      title: "TrainoFit — Gym + CrossFit en Puente Alto",
+      description:
+        "La potencia del Gym Tradicional y la intensidad del CrossFit en un solo lugar. Reserva tu cupo de apertura con un 20% de descuento.",
+      path: "/",
+    }),
     {
-      title:
-        "TrainoFit — Tu Entrenamiento Sin Límites | Gym + CrossFit | Apertura Agosto 2025",
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "ExerciseGym",
+        name: SITE_NAME,
+        url: SITE_URL,
+        image: `${SITE_URL}/deadlift-poster.jpg`,
+        telephone: `+${WHATSAPP_NUMBER}`,
+        hasMap: MAPS_LINK,
+        sameAs: [INSTAGRAM_URL],
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Av. 3 de Septiembre 090",
+          addressLocality: "Puente Alto",
+          addressRegion: "Región Metropolitana",
+          addressCountry: "CL",
+        },
+      },
     },
-    {
-      name: "description",
-      content:
-        "La potencia del Gym Tradicional y la intensidad del CrossFit en un solo lugar. Reserva tu cupo de apertura con un 20% de descuento. Nueva apertura en Agosto 2025.",
-    },
-    {
-      name: "keywords",
-      content:
-        "crossfit, gym, trainofit, box, athlete, entrenamiento, apertura agosto, chile",
-    },
-    // Open Graph
-    { property: "og:title", content: "TrainoFit — Tu Entrenamiento Sin Límites" },
-    {
-      property: "og:description",
-      content:
-        "Gym + CrossFit híbrido. Reserva tu cupo de apertura en Agosto 2025 y obtén 20% off.",
-    },
-    { property: "og:type", content: "website" },
-    { property: "og:image", content: "/trainofit.jpg" },
   ];
 }
 
-export default function Home() {
+export default function Home({ loaderData }: Route.ComponentProps) {
+  const { settings } = loaderData;
+
   return (
     <Layout>
       {/* Section 1: Hero — The Hook */}
-      <Hero />
+      <Hero settings={settings} />
 
       {/* Section 2: The Hybrid Problem — The Agitation */}
       <HybridProblem />
 
       {/* Section 3: Three Pillars — The Solution */}
-      <ThreePillars />
+      <ThreePillars settings={settings} />
 
-      {/* Section 4: Pricing — moved to /precios but teased here */}
-      {/* Section 5: Waitlist + Countdown — The Urgency */}
-      <WaitlistSection />
+      {/* Section 4: Waitlist + Countdown — The Urgency */}
+      <WaitlistSection settings={settings} />
 
-      {/* Section 6: Instagram preview */}
+      {/* Section 5: Instagram preview */}
       <InstagramPreview />
 
       {/* Footer is handled by Layout (includes maps + WhatsApp) */}

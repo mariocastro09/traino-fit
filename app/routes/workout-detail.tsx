@@ -33,6 +33,8 @@ export function meta() {
   return [
     { title: "Tu Entrenamiento - TrainoFit" },
     { name: "description", content: "Visualiza y realiza tu rutina de entrenamiento de TrainoFit." },
+    // Personal magic-link pages stay out of search results
+    { name: "robots", content: "noindex, nofollow" },
   ];
 }
 
@@ -265,7 +267,7 @@ export default function WorkoutDetail() {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+        <div className="min-h-dvh flex items-center justify-center bg-zinc-950">
           <div className="text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
               <Dumbbell className="text-primary animate-pulse" size={24} />
@@ -280,7 +282,7 @@ export default function WorkoutDetail() {
   if (error || !workout) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center px-4 bg-zinc-950">
+        <div className="min-h-dvh flex items-center justify-center px-4 bg-zinc-950">
           <div className="max-w-sm w-full text-center space-y-6 p-8 rounded-3xl border border-white/5 bg-zinc-900/20">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
               <Flame size={28} className="animate-pulse" />
@@ -289,7 +291,7 @@ export default function WorkoutDetail() {
               <h2 className="text-xl font-black uppercase text-white">¡Enlace No Disponible!</h2>
               <p className="text-sm text-light/60 leading-relaxed">{error || "El entrenamiento no se encuentra o es privado."}</p>
             </div>
-            <Link to="/"><Button className="w-full bg-primary text-white font-bold">Ir al Inicio</Button></Link>
+            <Link to="/"><Button className="w-full bg-primary text-dark font-bold">Ir al Inicio</Button></Link>
           </div>
         </div>
       </Layout>
@@ -332,7 +334,7 @@ export default function WorkoutDetail() {
         />
       )}
 
-      <div className="min-h-screen bg-zinc-950 pb-28 relative overflow-x-hidden">
+      <div className="min-h-dvh bg-zinc-950 pb-28 relative overflow-x-hidden">
         {/* Ambient glows */}
         <div className="fixed top-0 left-0 w-full h-72 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-72 h-72 bg-orange-600/5 rounded-full blur-[120px] pointer-events-none" />

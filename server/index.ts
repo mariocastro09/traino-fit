@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq, asc, desc, lt } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import * as schema from './db/schema';
+import { getAllSettings, getPublicSettings, getActivePlans, getActiveClassTypes, getActiveSchedule } from './public-data';
 
 type Bindings = {
   DB: D1Database;
@@ -407,12 +408,7 @@ app.get('/api/auth/session', async (c) => {
 
 // Public API - Get class schedule
 app.get('/api/schedule', async (c) => {
-  const db = drizzle(c.env.DB, { schema });
-  const schedules = await db.query.classSchedule.findMany({
-    where: eq(schema.classSchedule.isActive, true),
-  });
-
-  return c.json(schedules);
+  return c.json(await getActiveSchedule(c.env.DB));
 });
 
 // Admin API - Get all schedules (including inactive)
@@ -482,16 +478,19 @@ app.get('/api/admin/admins', requireAdmin, async (c) => {
 
 // ==================== SETTINGS API ====================
 
-// Public API - Get all settings
+// Public API - Get site settings (secrets such as HF_TOKEN are excluded)
 app.get('/api/settings', async (c) => {
   try {
-    const db = drizzle(c.env.DB, { schema });
-    const allSettings = await db.query.settings.findMany();
-    const settingsMap = allSettings.reduce((acc, curr) => {
-      acc[curr.key] = curr.value;
-      return acc;
-    }, {} as Record<string, string>);
-    return c.json(settingsMap);
+    return c.json(await getPublicSettings(c.env.DB));
+  } catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
+  }
+});
+
+// Admin API - Get all settings, including secrets
+app.get('/api/admin/settings', requireAdmin, async (c) => {
+  try {
+    return c.json(await getAllSettings(c.env.DB));
   } catch (error) {
     return c.json({ error: (error as Error).message }, 500);
   }
@@ -532,12 +531,7 @@ app.get('/api/admin/class-types', requireAdmin, async (c) => {
 
 // Public API - Get active class types
 app.get('/api/class-types', async (c) => {
-  const db = drizzle(c.env.DB, { schema });
-  const classTypes = await db.query.classTypes.findMany({
-    where: eq(schema.classTypes.isActive, true),
-  });
-
-  return c.json(classTypes);
+  return c.json(await getActiveClassTypes(c.env.DB));
 });
 
 // Admin API - Create class type
@@ -590,13 +584,7 @@ app.delete('/api/admin/class-types/:id', requireAdmin, async (c) => {
 
 // Public API - Get active plans
 app.get('/api/plans', async (c) => {
-  const db = drizzle(c.env.DB, { schema });
-  const plansList = await db.query.plans.findMany({
-    where: eq(schema.plans.isActive, true),
-    orderBy: [asc(schema.plans.orderIndex)],
-  });
-
-  return c.json(plansList);
+  return c.json(await getActivePlans(c.env.DB));
 });
 
 // Admin API - Get all plans
@@ -764,7 +752,19 @@ app.delete('/api/admin/students/:id', requireAdmin, async (c) => {
 app.post('/api/leads', async (c) => {
   try {
     const body = await c.req.json();
-    const { type, name, phone, email, interestClass, message, value } = body;
+    // Visitor input goes into an HTML email: cap its length and escape it.
+    const clean = (input: unknown) =>
+      String(input ?? '')
+        .slice(0, 1000)
+        .replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+    const type = body.type;
+    const [name, phone, interestClass, message, value] = [
+      body.name, body.phone, body.interestClass, body.message, body.value,
+    ].map(clean);
+
+    if (type === "waitlist" ? !value.trim() : !name.trim() || !phone.trim()) {
+      return c.json({ error: "Faltan datos de contacto." }, 400);
+    }
 
     const resendKey = c.env.RESEND_API_KEY;
     if (!resendKey) {
@@ -776,14 +776,14 @@ app.post('/api/leads', async (c) => {
     let subject = "";
 
     if (type === "waitlist") {
-      subject = `🚨 Nueva inscripción Lista de Espera: ${value}`;
+      subject = `🚨 Nueva inscripción Lista de Espera: ${String(body.value).slice(0, 100)}`;
       htmlContent = `
         <h2>Nueva Inscripción - Lista de Espera (Apertura)</h2>
         <p><strong>Contacto:</strong> ${value}</p>
         <p><strong>Fecha:</strong> ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}</p>
       `;
     } else {
-      subject = `💪 Solicitud de Clase Gratis: ${name}`;
+      subject = `💪 Solicitud de Clase Gratis: ${String(body.name).slice(0, 100)}`;
       htmlContent = `
         <h2>Nueva Solicitud de Clase Gratis</h2>
         <p><strong>Nombre:</strong> ${name}</p>

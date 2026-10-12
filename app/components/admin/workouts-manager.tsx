@@ -298,7 +298,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
         <Button 
           onClick={handleOpenAdd} 
           size="sm" 
-          className="bg-primary text-white hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8"
+          className="bg-primary text-dark hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8"
         >
           <Plus size={14} className="mr-1" />
           <span>Crear Workout</span>
@@ -543,7 +543,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                             handleAddTemplateToExercises(tpl);
                             setTemplateSearch("");
                           }}
-                          className="px-2 py-0.5 rounded bg-primary text-white font-bold hover:scale-105 active:scale-95 transition-all text-[9px]"
+                          className="px-2 py-0.5 rounded bg-primary text-dark font-bold hover:scale-105 active:scale-95 transition-all text-[9px]"
                         >
                           Añadir
                         </button>
@@ -700,7 +700,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
               </Button>
               <Button 
                 onClick={handleSave} 
-                className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold text-xs"
+                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold text-xs"
               >
                 {editingId ? "Actualizar Workout" : "Crear Workout"}
               </Button>

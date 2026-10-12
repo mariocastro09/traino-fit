@@ -17,7 +17,7 @@ export function SettingsManager() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/admin/settings", { credentials: "include" });
       if (res.ok) {
         const data = (await res.json()) as Record<string, string>;
         setSettings(data);
@@ -99,7 +99,7 @@ export function SettingsManager() {
           <Button 
             type="submit" 
             disabled={saving}
-            className="bg-primary text-white font-bold hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/15"
+            className="bg-primary text-dark font-bold hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/15"
           >
             <Save size={16} className="mr-1.5" />
             {saving ? "Guardando..." : "Guardar Cambios"}

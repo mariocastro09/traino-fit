@@ -436,7 +436,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
           </div>
         </div>
         {activeTab === "library" && (
-          <Button onClick={handleOpenAdd} size="sm" className="bg-primary text-white hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8">
+          <Button onClick={handleOpenAdd} size="sm" className="bg-primary text-dark hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8">
             <Plus size={14} className="mr-1" /> Nueva
           </Button>
         )}
@@ -617,7 +617,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
               <Button
                 onClick={handleBuilderSave}
                 disabled={builderSaving}
-                className="w-full bg-primary text-white font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all"
+                className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all"
               >
                 {builderSaving ? "Guardando..." : "💾 Guardar en Biblioteca"}
               </Button>
@@ -732,7 +732,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
                   <Button
                     onClick={handleBuilderPreview}
                     disabled={!builderName.trim()}
-                    className="w-full bg-primary text-white font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all disabled:opacity-40"
+                    className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all disabled:opacity-40"
                   >
                     <Zap size={13} className="mr-1.5" /> Generar Rutina
                   </Button>
@@ -804,7 +804,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
             </div>
             <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
               <Button variant="outline" size="sm" onClick={() => setShowDialog(false)}>Cancelar</Button>
-              <Button onClick={handleSave} className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold text-xs">{editingId ? "Actualizar" : "Registrar"}</Button>
+              <Button onClick={handleSave} className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold text-xs">{editingId ? "Actualizar" : "Registrar"}</Button>
             </div>
           </div>
         </DialogContent>

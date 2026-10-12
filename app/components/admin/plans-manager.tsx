@@ -413,7 +413,7 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
               <Button
                 onClick={handleSave}
                 disabled={!form.name?.trim() || !form.price?.trim() || !form.features?.trim() || !form.cta?.trim()}
-                className="bg-primary text-white hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold"
               >
                 {editingId ? "Actualizar Plan" : "Crear Plan"}
               </Button>

@@ -126,7 +126,7 @@ function SidebarTabButton({ active, icon, label, onClick }: { active: boolean; i
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${active
-        ? 'bg-primary text-white shadow-lg shadow-primary/10 scale-[1.01]'
+        ? 'bg-primary text-dark shadow-lg shadow-primary/10 scale-[1.01]'
         : 'text-light/50 hover:text-white hover:bg-white/5'
         }`}
     >
@@ -141,7 +141,7 @@ function MobileTabButton({ active, icon, label, onClick }: { active: boolean; ic
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${active
-        ? 'bg-primary text-white'
+        ? 'bg-primary text-dark'
         : 'text-light/50 hover:text-white hover:bg-white/5'
         }`}
     >
@@ -1178,7 +1178,7 @@ export default function Admin() {
                   <button
                     onClick={() => setCoachSubTab('assistant')}
                     className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${coachSubTab === 'assistant'
-                      ? 'bg-primary text-white shadow-lg shadow-primary/10'
+                      ? 'bg-primary text-dark shadow-lg shadow-primary/10'
                       : 'text-light/50 hover:text-white'
                       }`}
                   >
@@ -1187,7 +1187,7 @@ export default function Admin() {
                   <button
                     onClick={() => setCoachSubTab('workouts')}
                     className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${coachSubTab === 'workouts'
-                      ? 'bg-primary text-white shadow-lg shadow-primary/10'
+                      ? 'bg-primary text-dark shadow-lg shadow-primary/10'
                       : 'text-light/50 hover:text-white'
                       }`}
                   >

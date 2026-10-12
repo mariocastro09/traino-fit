@@ -820,7 +820,7 @@ export function FlyerGenerator() {
           </Button>
           <Button
             onClick={handleDownload}
-            className="flex-1 bg-primary text-white hover:bg-primary/90 text-xs font-bold uppercase tracking-wider h-11"
+            className="flex-1 bg-primary text-dark hover:bg-primary/90 text-xs font-bold uppercase tracking-wider h-11"
           >
             <Download size={13} className="mr-1.5" /> Descargar Flyer
           </Button>

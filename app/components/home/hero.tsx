@@ -1,310 +1,335 @@
-"use client";
-import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  useInView,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { Link } from "react-router";
 import { useRef, useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowDown } from "lucide-react";
+import { cn } from "~/lib/utils";
+
+const GOLD = "#d4a017";
+const ORANGE = "#ff6b35";
 
 const SLIDES = [
   {
     id: "gym",
     tag: "TRAINO GYM",
     focus: "FUERZA",
-    tagline: "Máquinas de última generación. Horario extendido. Tu ritmo, tus reglas.",
-    accent: "#d4a017",
-    accentDim: "rgba(212,160,23,0.15)",
+    tagline:
+      "Máquinas de última generación. Horario extendido. Tu ritmo, tus reglas.",
+    accent: GOLD,
   },
   {
     id: "box",
     tag: "TRAINO BOX",
     focus: "COMUNIDAD",
-    tagline: "Coaching de élite, WODs diarios y una comunidad que te empuja al límite.",
-    accent: "#ff6b35",
-    accentDim: "rgba(255,107,53,0.15)",
+    tagline:
+      "Coaching de élite, WODs diarios y una comunidad que te empuja al límite.",
+    accent: ORANGE,
   },
   {
     id: "hybrid",
     tag: "TRAINO HYBRID",
     focus: "RENDIMIENTO",
-    tagline: "Gym + CrossFit. El sistema definitivo para atletas sin restricciones.",
-    accent: "#d4a017",
-    accentDim: "rgba(212,160,23,0.15)",
+    tagline:
+      "Gym + CrossFit. El sistema definitivo para atletas sin restricciones.",
+    accent: GOLD,
   },
 ];
 
-const INTERVAL_MS = 5000;
+const MARQUEE_WORDS = [
+  "FUERZA",
+  "COMUNIDAD",
+  "RENDIMIENTO",
+  "HYBRID TRAINING",
+  "WODs DIARIOS",
+  "HORARIO EXTENDIDO",
+  "COACHES CERTIFICADOS",
+];
 
-export function Hero() {
+const INTERVAL_MS = 5500;
+
+export function Hero({ settings }: { settings: Record<string, string> }) {
   const ref = useRef<HTMLElement>(null);
   const [slide, setSlide] = useState(0);
-  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [hovered, setHovered] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const inView = useInView(ref);
+  // Nothing loops while the visitor is interacting or the hero is off-screen.
+  const paused = hovered || !inView || !!reduceMotion;
 
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
   });
+  const yText = useTransform(scrollYProgress, [0, 1], ["0%", "22%"]);
+  const opacityText = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const yText = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const opacityText = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scaleVideo = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data === "object") {
-          setSettings(data as Record<string, string>);
-        }
-      })
-      .catch(err => console.error("Error loading settings:", err));
-  }, []);
-
-  const dynamicSlides = [
-    {
-      id: "gym",
-      tag: settings.hero_slide_gym_tag || "TRAINO GYM",
-      focus: settings.hero_slide_gym_focus || "FUERZA",
-      tagline: settings.hero_slide_gym_tagline || "Máquinas de última generación. Horario extendido. Tu ritmo, tus reglas.",
-      accent: "#d4a017",
-      accentDim: "rgba(212,160,23,0.15)",
-    },
-    {
-      id: "box",
-      tag: settings.hero_slide_box_tag || "TRAINO BOX",
-      focus: settings.hero_slide_box_focus || "COMUNIDAD",
-      tagline: settings.hero_slide_box_tagline || "Coaching de élite, WODs diarios y una comunidad que te empuja al límite.",
-      accent: "#ff6b35",
-      accentDim: "rgba(255,107,53,0.15)",
-    },
-    {
-      id: "hybrid",
-      tag: settings.hero_slide_hybrid_tag || "TRAINO HYBRID",
-      focus: settings.hero_slide_hybrid_focus || "RENDIMIENTO",
-      tagline: settings.hero_slide_hybrid_tagline || "Gym + CrossFit. El sistema definitivo para atletas sin restricciones.",
-      accent: "#d4a017",
-      accentDim: "rgba(212,160,23,0.15)",
-    },
-  ];
+  // Admin-edited copy (settings) overrides the defaults above.
+  const slides = SLIDES.map((s) => ({
+    ...s,
+    tag: settings[`hero_slide_${s.id}_tag`] || s.tag,
+    focus: settings[`hero_slide_${s.id}_focus`] || s.focus,
+    tagline: settings[`hero_slide_${s.id}_tagline`] || s.tagline,
+  }));
+  const current = slides[slide];
+  const go = (step: number) =>
+    setSlide((s) => (s + step + slides.length) % slides.length);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSlide((s) => (s + 1) % dynamicSlides.length);
-    }, INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [dynamicSlides.length]);
+    if (paused) return;
+    const id = setTimeout(() => setSlide((s) => (s + 1) % SLIDES.length), INTERVAL_MS);
+    return () => clearTimeout(id);
+  }, [paused, slide]);
 
-  const current = dynamicSlides[slide] || dynamicSlides[0];
+  const aperturaBadge = settings.hero_apertura_badge ?? "";
+  const aperturaSub = settings.hero_apertura_sub ?? "";
 
   return (
     <section
       ref={ref}
-      className="relative flex items-center justify-center overflow-hidden bg-gray-950"
-      style={{ height: "calc(100dvh - 5rem)", minHeight: "600px" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={() => setHovered(false)}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight") go(1);
+        else if (e.key === "ArrowLeft") go(-1);
+      }}
+      aria-roledescription="carrusel"
+      aria-label="Presentación de TrainoFit"
+      className="relative isolate flex items-stretch overflow-hidden bg-zinc-950 text-white h-[calc(100dvh-5rem)] min-h-[640px]"
     >
       {/* ── Video Background ── */}
-      <motion.div className="absolute inset-0 z-0" style={{ scale: scaleVideo }}>
+      <div className="absolute inset-0 -z-10" aria-hidden>
         <video
           autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster="/deadlift-poster.jpg"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 size-full object-cover"
         >
           <source src="/deadlift-web.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/35 md:bg-black/65" />
-        {/* Accent glow per slide — visible bottom-left spot */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current.id + "-glow"}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none"
-            style={{ background: current.accentDim }}
-          />
-        </AnimatePresence>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04] mix-blend-overlay" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.8)_100%)]" />
-      </motion.div>
+        {/* Scrim keeps the copy readable over any video frame */}
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/35 to-transparent" />
+      </div>
 
-      {/* Fallback bg (also shown while poster itself loads) */}
-      <div className="absolute inset-0 z-[-1] bg-gradient-to-br from-gray-950 via-zinc-900 to-gray-950" />
+      {/* ── Left vertical brand rail (desktop) ── */}
+      <div
+        className="hidden lg:flex absolute left-0 inset-y-0 w-12 z-20 flex-col items-center justify-between py-6 border-r border-white/10 bg-black/20"
+        aria-hidden
+      >
+        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-white/60 [writing-mode:vertical-rl] rotate-180">
+          EST · 2026 · PUENTE ALTO
+        </span>
+        <span className="w-px flex-1 my-4 bg-white/15" />
+        <span
+          className="text-[10px] font-black tracking-[0.4em] uppercase [writing-mode:vertical-rl] rotate-180 transition-colors duration-500"
+          style={{ color: current.accent }}
+        >
+          TRAINOFIT
+        </span>
+      </div>
 
-      {/* ── Slide progress bar (top) ── */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex h-[3px]">
-        {dynamicSlides.map((s, i) => (
+      {/* ── Slide progress + selector ── */}
+      <div className="absolute top-0 inset-x-0 z-30 flex">
+        {slides.map((s, i) => (
           <button
             key={s.id}
+            type="button"
             onClick={() => setSlide(i)}
-            className="flex-1 relative overflow-hidden bg-white/10 cursor-pointer"
-            aria-label={`Slide ${s.tag}`}
+            aria-label={`Ver ${s.tag}`}
+            aria-current={i === slide}
+            className="flex-1 pb-4 cursor-pointer"
           >
-            {i === slide && (
-              <motion.div
-                key={slide + "-bar"}
-                className="absolute inset-y-0 left-0"
-                style={{ background: current.accent }}
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
-              />
-            )}
-            {i < slide && (
-              <div className="absolute inset-0" style={{ background: current.accent, opacity: 0.5 }} />
-            )}
+            <span className="block relative h-[3px] overflow-hidden bg-white/10">
+              {i < slide && (
+                <span
+                  className="absolute inset-0 opacity-50"
+                  style={{ background: current.accent }}
+                />
+              )}
+              {i === slide && (
+                <motion.span
+                  key={`${slide}-${paused}`}
+                  className="absolute inset-0 origin-left"
+                  style={{ background: current.accent }}
+                  initial={{ scaleX: paused ? 1 : 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
+                />
+              )}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* ── Content ── */}
-      <motion.div
-        style={{ y: yText, opacity: opacityText }}
-        className="relative z-20 w-full max-w-4xl mx-auto px-4 sm:px-10 text-center py-4 sm:py-12"
+      {/* ── Right slide indicators (desktop, mirrors the selector above) ── */}
+      <div
+        className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 flex-col gap-5"
+        aria-hidden
       >
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-3.5 sm:gap-5"
-        >
-          {/* Logo from Header */}
-          <div className="relative mb-2 flex justify-center scale-110 sm:scale-120">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm"></div>
-            <div className="relative bg-primary/10 p-2 rounded-full border-2 border-primary/30">
-              <img
-                src="/traino-svg.svg"
-                alt="Trainofit Logo"
-                className="h-11 w-11 sm:h-13 sm:w-13 brightness-0 invert opacity-90"
-                style={{
-                  filter:
-                    "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* ── Slide tag pill ── */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={current.id + "-tag"}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.35 }}
-              className="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 px-3 py-1.5 border backdrop-blur-md text-center max-w-full rounded-none"
-              style={{
-                borderColor: current.accent + "50",
-                background: current.accentDim,
-              }}
+        {slides.map((s, i) => {
+          const active = i === slide;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              tabIndex={-1}
+              onClick={() => setSlide(i)}
+              className="group flex items-center justify-end gap-3 cursor-pointer"
             >
               <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                className={cn(
+                  "text-[11px] font-mono tabular-nums tracking-widest transition-opacity duration-200",
+                  active ? "opacity-100" : "opacity-40 group-hover:opacity-80"
+                )}
+                style={{ color: active ? current.accent : "white" }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                className={cn(
+                  "block h-px w-14 origin-right transition-transform duration-300",
+                  !active && "scale-x-[0.43]"
+                )}
                 style={{
-                  background: current.accent,
-                  boxShadow: `0 0 6px ${current.accent}`,
+                  background: active ? current.accent : "rgba(255,255,255,0.4)",
                 }}
               />
-              <span
-                className="text-xs sm:text-sm font-black tracking-[0.25em] uppercase"
-                style={{ color: current.accent }}
-              >
-                {current.tag}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content (asymmetric, anchored bottom-left) ── */}
+      <motion.div
+        style={reduceMotion ? undefined : { y: yText, opacity: opacityText }}
+        className="relative z-10 w-full max-w-[1400px] mx-auto px-5 sm:px-10 lg:pl-24 lg:pr-32 flex flex-col justify-end pb-20 lg:pb-24 pt-16 sm:pt-28"
+      >
+        <div className="flex flex-col items-start gap-4 sm:gap-7 max-w-3xl">
+          {/* ── Slide tag ── */}
+          <p
+            className="inline-flex flex-wrap items-center gap-2 sm:gap-3 pl-3 py-1.5 border-l-2 transition-colors duration-500"
+            style={{ borderColor: current.accent }}
+          >
+            <span
+              className="text-[11px] sm:text-xs font-black tracking-[0.18em] sm:tracking-[0.28em] uppercase transition-colors duration-500"
+              style={{ color: current.accent }}
+            >
+              {current.tag}
+            </span>
+            {aperturaBadge && (
+              <span className="text-[11px] sm:text-xs text-white/60 font-bold tracking-[0.12em] sm:tracking-[0.18em] uppercase">
+                {aperturaBadge}
               </span>
-              <span className="text-xs sm:text-sm text-white/40 font-bold tracking-[0.15em] uppercase">
-                {settings.hero_apertura_badge !== undefined ? settings.hero_apertura_badge : "— Apertura Agosto 2026"}
-              </span>
-            </motion.div>
-          </AnimatePresence>
+            )}
+          </p>
 
           {/* ── Main heading ── */}
-          <h1
-            className="font-black uppercase leading-[0.95] sm:leading-[0.88] tracking-tight text-white text-5xl xs:text-6xl sm:text-7xl md:text-8xl xl:text-9xl break-words"
-            style={{
-              fontFamily: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif",
-              textShadow: "0 2px 40px rgba(0,0,0,0.8)",
-            }}
-          >
-            TU <br className="hidden xs:block sm:hidden" />
-            {/* The changing focus word */}
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={current.id + "-focus"}
-                initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="inline-block relative"
-                style={{ color: current.accent }}
-              >
-                {current.focus}
-                {/* Glow behind the word */}
-                <span
-                  className="absolute inset-0 blur-2xl -z-10 opacity-40"
-                  style={{ background: current.accent }}
-                />
-              </motion.span>
-            </AnimatePresence>
-            .<br />
-            SIN LÍMITES.
+          <h1 className="font-display uppercase leading-[0.86] text-white text-7xl xs:text-8xl md:text-9xl xl:text-[9.5rem] break-words">
+            <span className="block">TU</span>
+            <span className="relative inline-block">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={current.id}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -24 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="inline-block relative"
+                  style={{ color: current.accent }}
+                >
+                  {current.focus}
+                  {/* Outline ghost layer */}
+                  <span
+                    aria-hidden
+                    className="hidden sm:block absolute inset-0 pointer-events-none select-none text-transparent translate-x-1.5 translate-y-1.5 opacity-35"
+                    style={{ WebkitTextStroke: `1.5px ${current.accent}` }}
+                  >
+                    {current.focus}
+                  </span>
+                </motion.span>
+              </AnimatePresence>
+            </span>
+            <span className="block">SIN LÍMITES.</span>
           </h1>
 
           {/* ── Tagline ── */}
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={current.id + "-tagline"}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="text-sm sm:text-base md:text-lg text-gray-300 max-w-sm sm:max-w-lg font-light leading-relaxed px-2"
-            >
-              {current.tagline}{" "}
+          <p className="text-sm sm:text-base md:text-lg text-gray-200 max-w-xl leading-relaxed min-h-[4.5em] sm:min-h-[3.5em]">
+            {current.tagline}{" "}
+            {aperturaSub && (
               <span className="text-primary font-semibold block sm:inline mt-1.5 sm:mt-0">
-                {settings.hero_apertura_sub !== undefined ? settings.hero_apertura_sub : "Nueva apertura en AGOSTO."}
+                {aperturaSub}
               </span>
-            </motion.p>
-          </AnimatePresence>
+            )}
+          </p>
 
           {/* ── CTAs ── */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center justify-center pt-2 px-2">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Link
               to="/contacto"
               id="hero-cta-primary"
-              className="group relative w-full sm:w-auto px-7 py-3.5 font-black text-sm uppercase tracking-widest overflow-hidden rounded-none transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
-              style={{
-                background: current.accent,
-                boxShadow: `0 0 40px -12px ${current.accent}`,
-                transition: "background 0.6s, box-shadow 0.3s, transform 0.3s",
-              }}
+              className="group w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest leading-tight hover:bg-primary-300 active:scale-[0.98] transition-[background-color,scale] duration-200 flex items-center justify-center gap-2"
             >
-              <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out animate-pulse" />
-              <span className="relative flex items-center justify-center gap-2 text-white">
-                RESERVAR MI CUPÓN DE APERTURA
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </span>
+              RESERVAR MI CUPÓN DE APERTURA
+              <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-200" aria-hidden />
             </Link>
 
             <Link
               to="/precios"
               id="hero-cta-secondary"
-              className="group w-full sm:w-auto px-7 py-3.5 border-2 border-white/25 text-white font-bold text-sm uppercase tracking-widest rounded-none hover:bg-white/10 hover:border-white/50 transition-all duration-300 backdrop-blur-sm"
+              className="group w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 border border-white/30 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 hover:border-white/60 transition-colors duration-200 flex items-center justify-center gap-2"
             >
-              <span className="flex items-center justify-center gap-2">
-                Ver Planes
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity"><ArrowRight className="w-4 h-4" /></span>
-              </span>
+              Ver Planes
+              <ArrowRight className="size-4 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-[opacity,translate] duration-200" aria-hidden />
             </Link>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-950 to-transparent z-10 pointer-events-none" />
+      {/* ── Bottom marquee ticker ── */}
+      <div
+        className="absolute bottom-0 inset-x-0 z-20 border-t border-white/10 bg-black/70 overflow-hidden"
+        aria-hidden
+      >
+        <div
+          className={cn(
+            "flex w-max whitespace-nowrap py-2 animate-marquee",
+            paused && "[animation-play-state:paused]"
+          )}
+        >
+          {[0, 1].map((dup) => (
+            <div key={dup} className="flex items-center gap-8 px-4">
+              {MARQUEE_WORDS.map((word) => (
+                <span key={word} className="flex items-center gap-8">
+                  <span className="text-[11px] sm:text-xs font-black tracking-[0.3em] uppercase text-white/55">
+                    {word}
+                  </span>
+                  <span className="size-1 rounded-full bg-primary" />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Scroll cue (above marquee) ── */}
+      <div
+        className="hidden sm:flex absolute bottom-14 right-6 lg:right-24 z-20 items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-white/50"
+        aria-hidden
+      >
+        <span>SCROLL</span>
+        <ArrowDown className="size-3" />
+      </div>
     </section>
   );
 }

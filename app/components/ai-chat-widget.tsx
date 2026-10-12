@@ -429,7 +429,7 @@ Por favor:
             <button
               onClick={() => switchProgramType("single")}
               className={`py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all ${
-                programType === "single" ? "bg-primary text-white shadow" : "text-zinc-400 hover:text-white"
+                programType === "single" ? "bg-primary text-dark shadow" : "text-zinc-400 hover:text-white"
               }`}
             >
               🏋️ Sesión Única
@@ -437,7 +437,7 @@ Por favor:
             <button
               onClick={() => switchProgramType("cycle")}
               className={`py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all ${
-                programType === "cycle" ? "bg-primary text-white shadow" : "text-zinc-400 hover:text-white"
+                programType === "cycle" ? "bg-primary text-dark shadow" : "text-zinc-400 hover:text-white"
               }`}
             >
               🔄 Ciclo 3 Días
@@ -488,7 +488,7 @@ Por favor:
           <div className="flex flex-col gap-2 pt-1">
             <Button
               onClick={() => completeOnboarding(programType, selectedType, selectedLevel, selectedDuration, selectedMuscle)}
-              className="w-full bg-primary text-white font-black uppercase tracking-wider text-sm h-12 rounded-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary text-dark font-black uppercase tracking-wider text-sm h-12 rounded-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
             >
               <Zap size={15} /> Generar {programType === "cycle" ? "Ciclo" : "Rutina"}
             </Button>

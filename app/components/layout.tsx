@@ -1,38 +1,73 @@
-import { Link } from "react-router";
+import { Link, NavLink, useLocation } from "react-router";
 import { useState, useEffect } from "react";
 import { Menu, X, Instagram, MapPin, Phone, Mail } from "lucide-react";
+import { cn } from "~/lib/utils";
+import {
+  ADDRESS,
+  EMAIL,
+  INSTAGRAM_URL,
+  MAPS_EMBED,
+  WHATSAPP_DISPLAY,
+  whatsappLink,
+} from "~/lib/site";
+
+const NAV_LINKS = [
+  { to: "/", label: "Inicio" },
+  { to: "/clases", label: "Clases" },
+  { to: "/horario", label: "Horario" },
+  { to: "/precios", label: "Precios" },
+  { to: "/instagram", label: "Instagram" },
+  { to: "/contacto", label: "Contacto" },
+];
+
+export function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
+function Logo({ className }: { className?: string }) {
+  return (
+    <Link to="/" className={cn("inline-flex items-center gap-3", className)}>
+      <span className="bg-primary/10 p-2 rounded-full border-2 border-primary/30">
+        <img
+          src="/traino-svg.svg"
+          alt=""
+          width={36}
+          height={36}
+          className="size-9"
+          style={{
+            filter:
+              "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
+          }}
+        />
+      </span>
+      <span className="font-display text-3xl leading-none text-white">
+        TRAIN<span className="text-primary">O</span>FIT
+      </span>
+    </Link>
+  );
+}
 
 // ── WhatsApp floating button ──────────────────────
 function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/56932214427?text=Hola%20TrainoFit!%20Quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20los%20planes."
+      href={whatsappLink("Hola TrainoFit! Quisiera más información sobre los planes.")}
       target="_blank"
       rel="noopener noreferrer"
       id="whatsapp-float-btn"
       aria-label="Contáctanos por WhatsApp"
-      className="fixed bottom-6 right-6 z-50 group flex items-center gap-3 overflow-hidden transition-all duration-500"
+      className="fixed z-40 right-[max(1.5rem,env(safe-area-inset-right))] bottom-[max(1.5rem,env(safe-area-inset-bottom))] size-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform duration-200"
     >
-      {/* Label (expands on hover) */}
-      <span className="max-w-0 group-hover:max-w-[200px] overflow-hidden whitespace-nowrap text-sm font-bold text-white bg-zinc-900 px-0 group-hover:px-4 py-2 transition-all duration-500 border border-white/10 group-hover:border-green-500/30">
-        Contáctanos
-      </span>
-
-      {/* Icon button */}
-      <div className="w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-[0_4px_30px_rgba(37,211,102,0.4)] hover:scale-110 hover:shadow-[0_4px_40px_rgba(37,211,102,0.6)] transition-all duration-300">
-        <svg
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="w-7 h-7 text-white"
-        >
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-        </svg>
-      </div>
+      <WhatsAppIcon className="size-7" />
     </a>
   );
 }
 
-// ── Header ────────────────────────────────────────
+// ── Layout ────────────────────────────────────────
 export function Layout({
   children,
   hideFooter = false,
@@ -45,161 +80,120 @@ export function Layout({
   hideWhatsApp?: boolean;
 }) {
   return (
-    <div className="bg-dark text-light font-sans min-h-screen flex flex-col">
+    <div className="bg-dark text-light font-sans min-h-dvh flex flex-col">
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-dark focus:font-bold"
+      >
+        Saltar al contenido
+      </a>
       {!hideHeader && <Header />}
-      <main className="flex-1 flex flex-col">{children}</main>
+      <main id="contenido" className="flex-1 flex flex-col">
+        {children}
+      </main>
       {!hideFooter && <Footer />}
       {!hideWhatsApp && <WhatsAppButton />}
     </div>
   );
 }
 
+// ── Header ────────────────────────────────────────
 function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+  // Storing the path the menu was opened on closes it on any navigation.
+  const [menuOpenAt, setMenuOpenAt] = useState<string | null>(null);
+  const menuOpen = menuOpenAt === pathname;
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsAdmin(!!localStorage.getItem("admin_session"));
-    }
+    setIsAdmin(!!localStorage.getItem("admin_session"));
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-dark/95 backdrop-blur-md border-b border-white/10">
-      <nav className="container mx-auto px-6 py-4">
+    <header className="sticky top-0 z-40 bg-dark/95 backdrop-blur-md border-b border-white/10">
+      <nav aria-label="Principal" className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm"></div>
-              <div className="relative bg-primary/10 p-2 rounded-full border-2 border-primary/30 group-hover:border-primary/60 transition-all">
-                <img
-                  src="/traino-svg.svg"
-                  alt="Trainofit Logo"
-                  className="h-10 w-10 brightness-0 invert opacity-90"
-                  style={{
-                    filter:
-                      "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
-                  }}
-                />
-              </div>
-            </div>
-            <span className="text-xl sm:text-2xl font-bold">
-              TRAIN<span className="text-primary">O</span>FIT
-            </span>
-          </Link>
+          <Logo />
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <NavLink to="/">Inicio</NavLink>
-            <NavLink to="/clases">Clases</NavLink>
-            <NavLink to="/horario">Horario</NavLink>
-            <NavLink to="/precios">Precios</NavLink>
-            <NavLink to="/instagram">Instagram</NavLink>
-            <NavLink to="/contacto">Contacto</NavLink>
+          <ul className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <li key={link.to}>
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) =>
+                    cn(
+                      "font-medium py-2 border-b-2 transition-colors duration-200",
+                      isActive
+                        ? "text-primary border-primary"
+                        : "text-light/80 border-transparent hover:text-primary"
+                    )
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
             {isAdmin && (
-              <Link
-                to="/admin"
-                className="px-3.5 py-1.5 bg-primary text-white font-bold rounded-lg text-xs hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg shadow-primary/15"
-              >
-                Admin
-              </Link>
+              <li>
+                <Link
+                  to="/admin"
+                  className="px-3.5 py-1.5 bg-primary text-dark font-bold text-xs hover:bg-primary-300 transition-colors duration-200"
+                >
+                  Admin
+                </Link>
+              </li>
             )}
-          </div>
+          </ul>
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-light hover:text-primary transition-colors"
-            aria-label="Toggle menu"
+            type="button"
+            onClick={() => setMenuOpenAt(menuOpen ? null : pathname)}
+            className="md:hidden p-2 text-light hover:text-primary transition-colors duration-200"
+            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={menuOpen}
+            aria-controls="menu-movil"
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {menuOpen ? <X size={24} aria-hidden /> : <Menu size={24} aria-hidden />}
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pt-4 pb-2 border-t border-white/10 mt-4">
-            <MobileNavLink to="/" onClick={() => setMobileMenuOpen(false)}>
-              Inicio
-            </MobileNavLink>
-            <MobileNavLink
-              to="/clases"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Clases
-            </MobileNavLink>
-            <MobileNavLink
-              to="/horario"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Horario
-            </MobileNavLink>
-            <MobileNavLink
-              to="/precios"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Precios
-            </MobileNavLink>
-            <MobileNavLink
-              to="/instagram"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Instagram
-            </MobileNavLink>
-            <MobileNavLink
-              to="/contacto"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Contacto
-            </MobileNavLink>
+        {menuOpen && (
+          <ul id="menu-movil" className="md:hidden pt-4 pb-2 border-t border-white/10 mt-4">
+            {NAV_LINKS.map((link) => (
+              <li key={link.to}>
+                <NavLink
+                  to={link.to}
+                  onClick={() => setMenuOpenAt(null)}
+                  className={({ isActive }) =>
+                    cn(
+                      "block py-3 px-4 border-l-2 transition-colors duration-200",
+                      isActive
+                        ? "text-primary border-primary bg-white/5"
+                        : "text-light/80 border-transparent hover:text-primary hover:bg-white/5"
+                    )
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
             {isAdmin && (
-              <div className="px-4 py-2 mt-2">
+              <li className="px-4 py-2 mt-2">
                 <Link
                   to="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-center py-2 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/95 transition-all duration-300 shadow-lg shadow-primary/10"
+                  className="block w-full text-center py-2 bg-primary text-dark font-bold text-sm hover:bg-primary-300 transition-colors duration-200"
                 >
                   Panel Admin
                 </Link>
-              </div>
+              </li>
             )}
-          </div>
+          </ul>
         )}
       </nav>
     </header>
-  );
-}
-
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="text-light/80 hover:text-primary transition-all duration-300 ease-in-out font-medium relative group"
-    >
-      {children}
-      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-    </Link>
-  );
-}
-
-function MobileNavLink({
-  to,
-  onClick,
-  children,
-}: {
-  to: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className="block py-2 px-4 text-light/80 hover:text-primary hover:bg-white/5 rounded-lg transition-all duration-300 ease-in-out"
-    >
-      {children}
-    </Link>
   );
 }
 
@@ -208,151 +202,107 @@ function Footer() {
   return (
     <footer className="mt-auto border-t border-white/10 bg-zinc-950">
       {/* Map embed */}
-      <div className="w-full h-56 relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
-          <iframe
-            title="TrainoFit Ubicación"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3329.1!2d-70.5792!3d-33.6107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662d06f56c7d4a1%3A0x0!2sAvenida%203%20de%20Septiembre%20090%2C%20Puente%20Alto%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses-419!2scl!4v1716000000000!5m2!1ses-419!2scl"
-            width="100%"
-            height="100%"
-            style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-        {/* Overlay gradient on map edges */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(9,9,11,0.6)_100%)]" />
+      <div className="w-full h-56 bg-zinc-900 border-b border-white/5">
+        <iframe
+          title="Ubicación de TrainoFit en Google Maps"
+          src={MAPS_EMBED}
+          width="100%"
+          height="100%"
+          style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="inline-flex items-center gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm"></div>
-                <div className="relative bg-primary/10 p-2 rounded-full border-2 border-primary/30 group-hover:border-primary/60 transition-all">
-                  <img
-                    src="/traino-svg.svg"
-                    alt="Trainofit Logo"
-                    className="h-9 w-9 brightness-0 invert opacity-90"
-                    style={{
-                      filter:
-                        "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
-                    }}
-                  />
-                </div>
-              </div>
-              <span className="text-2xl font-black text-white tracking-wide group-hover:text-primary transition-colors uppercase" style={{ fontFamily: "'Impact', 'Arial Black', sans-serif" }}>
-                TRAIN<span className="text-primary">O</span>FIT
-              </span>
-            </Link>
-            <p className="text-gray-500 text-sm leading-relaxed">
+            <Logo />
+            <p className="text-gray-400 text-sm leading-relaxed">
               La potencia del Gym Tradicional y la intensidad del CrossFit en un
               solo lugar.
             </p>
             <div className="flex gap-3">
               <a
-                href="https://www.instagram.com/trainofit/"
+                href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 id="footer-instagram-link"
-                className="p-2.5 bg-white/5 border border-white/10 hover:bg-gradient-to-br hover:from-purple-600 hover:to-orange-400 hover:border-transparent transition-all duration-300"
-                aria-label="Instagram"
+                className="p-2.5 bg-white/5 border border-white/10 hover:border-primary hover:text-primary transition-colors duration-200"
+                aria-label="Instagram de TrainoFit"
               >
-                <Instagram size={18} />
+                <Instagram size={18} aria-hidden />
               </a>
               <a
-                href="https://wa.me/56932214427"
+                href={whatsappLink()}
                 target="_blank"
                 rel="noopener noreferrer"
                 id="footer-whatsapp-link"
-                className="p-2.5 bg-white/5 border border-white/10 hover:bg-[#25D366] hover:border-[#25D366] transition-all duration-300"
-                aria-label="WhatsApp"
+                className="p-2.5 bg-white/5 border border-white/10 hover:border-[#25D366] hover:text-[#25D366] transition-colors duration-200"
+                aria-label="WhatsApp de TrainoFit"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-[18px] h-[18px]"
-                >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
+                <WhatsAppIcon className="size-[18px]" />
               </a>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-black text-sm tracking-[0.2em] uppercase text-white mb-5">
-              Navegación
-            </h4>
+            <h2 className="eyebrow text-white mb-5">Navegación</h2>
             <ul className="space-y-2.5">
-              <FooterLink to="/clases">Clases</FooterLink>
-              <FooterLink to="/horario">Horario</FooterLink>
-              <FooterLink to="/precios">Precios</FooterLink>
-              <FooterLink to="/instagram">Instagram</FooterLink>
-              <FooterLink to="/contacto">Contacto</FooterLink>
+              {NAV_LINKS.slice(1).map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className="text-gray-400 hover:text-primary text-sm transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h4 className="font-black text-sm tracking-[0.2em] uppercase text-white mb-5">
-              Contacto
-            </h4>
-            <ul className="space-y-4 text-gray-500">
+            <h2 className="eyebrow text-white mb-5">Contacto</h2>
+            <ul className="space-y-4 text-gray-400 text-sm">
               <li className="flex items-start gap-3">
-                <MapPin size={16} className="mt-0.5 flex-shrink-0 text-primary" />
-                <span className="text-sm">Avenida 3 de Septiembre 090, Puente Alto</span>
+                <MapPin size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+                <span>{ADDRESS}</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={16} className="flex-shrink-0 text-primary" />
+                <Phone size={16} className="shrink-0 text-primary" aria-hidden />
                 <a
-                  href="https://wa.me/56932214427"
-                  className="text-sm hover:text-primary transition-colors"
+                  href={whatsappLink()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="tabular-nums hover:text-primary transition-colors duration-200"
                 >
-                  +56 9 32214427 (WhatsApp)
+                  {WHATSAPP_DISPLAY} (WhatsApp)
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail size={16} className="flex-shrink-0 text-primary" />
+                <Mail size={16} className="shrink-0 text-primary" aria-hidden />
                 <a
-                  href="mailto:hola@trainofit.cl"
-                  className="text-sm hover:text-primary transition-colors"
+                  href={`mailto:${EMAIL}`}
+                  className="hover:text-primary transition-colors duration-200"
                 >
-                  trainocf@gmail.com
+                  {EMAIL}
                 </a>
               </li>
             </ul>
-
-            {/* WhatsApp CTA */}
-            <a
-              href="https://wa.me/56932214427?text=Hola%20TrainoFit!%20Quiero%20saber%20más."
-              target="_blank"
-              rel="noopener noreferrer"
-              id="footer-whatsapp-cta"
-              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-sm font-bold hover:bg-[#25D366]/20 transition-all duration-300"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4"
-              >
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              Escríbenos ahora
-            </a>
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-600 text-xs">
+        <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-500 text-xs">
           <p>&copy; {new Date().getFullYear()} TrainoFit.cl — Todos los derechos reservados.</p>
           <div className="flex items-center gap-4">
             <Link
               to="/admin"
-              className="text-gray-600/30 hover:text-primary transition-colors duration-300 text-[11px]"
-              title="Panel de Administración"
+              className="text-gray-600 hover:text-primary transition-colors duration-200"
             >
               Admin
             </Link>
@@ -360,6 +310,8 @@ function Footer() {
               Hecho con ❤️ por{" "}
               <a
                 href="https://www.github.com/mariocastro09"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
                 Mario Castro
@@ -369,18 +321,5 @@ function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <li>
-      <Link
-        to={to}
-        className="text-gray-500 hover:text-primary text-sm transition-all duration-300 ease-in-out"
-      >
-        {children}
-      </Link>
-    </li>
   );
 }
