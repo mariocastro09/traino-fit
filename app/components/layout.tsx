@@ -44,7 +44,7 @@ function Logo({ className }: { className?: string }) {
           }}
         />
       </span>
-      <span className="font-display text-3xl leading-none text-white max-[379px]:sr-only">
+      <span className="font-logo text-xl sm:text-2xl leading-none text-white max-[479px]:sr-only">
         TRAIN<span className="text-primary">O</span>FIT
       </span>
     </Link>

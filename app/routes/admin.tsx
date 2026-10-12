@@ -687,7 +687,7 @@ export default function Admin() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-black tracking-wider text-white uppercase">TRAINOFIT</span>
+              <span className="font-logo text-sm tracking-wider text-white uppercase">TRAINOFIT</span>
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-primary leading-none">Panel administrador</span>
             </div>
           </div>
@@ -740,7 +740,7 @@ export default function Admin() {
                   "brightness(0) saturate(100%) invert(77%) sepia(18%) saturate(1247%) hue-rotate(8deg) brightness(95%) contrast(88%)",
               }}
             />
-            <span className="text-sm font-black uppercase text-white tracking-wide">TRAINOFIT</span>
+            <span className="font-logo text-sm uppercase text-white tracking-wide">TRAINOFIT</span>
           </div>
           <button
             aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}

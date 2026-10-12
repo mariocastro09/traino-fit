@@ -25,6 +25,11 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300..900&display=swap",
   },
+  // Slab serif of the original logo, subset to the wordmark's letters
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&text=TRAINOFIT&display=swap",
+  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

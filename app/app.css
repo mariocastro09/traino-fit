@@ -9,6 +9,7 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: "Bebas Neue", "Impact", "Arial Black", sans-serif;
+  --font-logo: "Alfa Slab One", "Rockwell Extra Bold", "Rockwell", serif;
   --breakpoint-xs: 30rem;
 
   /* Elegant Gold/Mustard Color Scheme - Dark Theme */
