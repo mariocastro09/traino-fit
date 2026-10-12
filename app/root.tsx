@@ -34,8 +34,10 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
+        {/* Lets CSS hide scroll-reveal content only when JS can show it again */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#09090b" />
@@ -75,7 +77,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           ? "La página que buscas no existe o cambió de dirección."
           : "Tuvimos un problema al cargar esta página. Intenta de nuevo en unos minutos."}
       </p>
-      <Link
+      <Link viewTransition
         to="/"
         className="px-8 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
       >

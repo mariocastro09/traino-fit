@@ -59,7 +59,7 @@ export function ThreePillars({ settings }: { settings: Record<string, string> })
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-        {PILLARS.map((pillar) => {
+        {PILLARS.map((pillar, index) => {
           // Admin-edited copy (settings) overrides the defaults above.
           const text = (field: "hook" | "description" | "features") =>
             settings[`three_pillars_${pillar.id}_${field}`] || pillar[field];
@@ -68,11 +68,12 @@ export function ThreePillars({ settings }: { settings: Record<string, string> })
             <article
               key={pillar.id}
               id={`pillar-traino-${pillar.id}`}
+              style={{ "--i": index } as React.CSSProperties}
               className={cn(
-                "flex flex-col border reveal",
+                "flex flex-col border reveal hover:-translate-y-1.5",
                 pillar.highlighted
                   ? "border-primary bg-primary/5"
-                  : "border-white/10 bg-zinc-900/60"
+                  : "border-white/10 bg-zinc-900/60 hover:border-primary/50"
               )}
             >
               {pillar.highlighted && (
@@ -109,7 +110,7 @@ export function ThreePillars({ settings }: { settings: Record<string, string> })
                     ))}
                 </ul>
 
-                <Link
+                <Link viewTransition
                   to={pillar.ctaLink}
                   id={`pillar-traino-${pillar.id}-cta`}
                   className={cn(

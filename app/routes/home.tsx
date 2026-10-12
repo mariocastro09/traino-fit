@@ -58,11 +58,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <Layout>
-      {/* Section 1: Hero — The Hook */}
-      <Hero settings={settings} isOpen={isOpen} />
-
-      {/* Section 2: The Hybrid Problem — The Agitation */}
-      <HybridProblem />
+      {/* Sections 1–2: the hero stays pinned while "the problem" slides over it */}
+      <div>
+        <Hero settings={settings} isOpen={isOpen} />
+        <HybridProblem />
+      </div>
 
       {/* Section 3: Three Pillars — The Solution */}
       <ThreePillars settings={settings} />

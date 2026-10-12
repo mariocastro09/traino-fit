@@ -1,4 +1,11 @@
-import { motion, useInView, useReducedMotion } from "motion/react";
+import {
+  motion,
+  useInView,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { Link } from "react-router";
 import { useRef, useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
@@ -49,9 +56,19 @@ export function Hero({
   const [holding, setHolding] = useState(false);
   const reduceMotion = useReducedMotion();
   const inView = useInView(ref);
+
+  // The hero stays pinned while the next section slides over it; as that
+  // happens it dims and settles back, and once covered it stops playing.
+  const { scrollY } = useScroll();
+  const dim = useTransform(scrollY, [0, 700], [0, 0.8]);
+  const settle = useTransform(scrollY, [0, 700], ["scale(1)", "scale(0.94)"]);
+  const [covered, setCovered] = useState(false);
+  useMotionValueEvent(scrollY, "change", (y) => setCovered(y > window.innerHeight * 0.85));
+
   // Nothing plays or advances off-screen, while the visitor is on the
   // selector, or when they asked for reduced motion.
-  const paused = holding || !inView || !!reduceMotion;
+  const visible = inView && !covered;
+  const paused = holding || !visible || !!reduceMotion;
 
   // Admin-edited copy (settings) overrides the defaults above.
   const slides = SLIDES.map((s) => ({
@@ -77,14 +94,14 @@ export function Hero({
   useEffect(() => {
     videos.current.forEach((video, i) => {
       if (!video) return;
-      if (i === slide && inView && !reduceMotion) {
+      if (i === slide && visible && !reduceMotion) {
         video.play().catch(() => {});
       } else {
         video.pause();
         if (i !== slide) video.currentTime = 0;
       }
     });
-  }, [slide, inView, reduceMotion, loaded]);
+  }, [slide, visible, reduceMotion, loaded]);
 
   // The pre-opening announcement stops applying once the gym is open.
   const announcement = isOpen
@@ -93,10 +110,11 @@ export function Hero({
   const offer = isOpen ? "Tu primera clase es gratis." : settings.hero_apertura_sub ?? "";
 
   return (
-    <section
+    <motion.section
       ref={ref}
       aria-label="Programas de TrainoFit"
-      className="relative isolate flex flex-col overflow-hidden bg-black text-white h-[calc(100dvh-5rem)] min-h-[640px]"
+      style={reduceMotion ? undefined : { transform: settle }}
+      className="sticky top-20 isolate flex flex-col overflow-hidden bg-black text-white h-[calc(100dvh-5rem)] min-h-[640px] origin-bottom"
     >
       {/* ── Footage, one clip per program ── */}
       <div className="absolute inset-0 -z-10" aria-hidden>
@@ -135,26 +153,33 @@ export function Hero({
       </div>
 
       {/* ── Copy ── */}
-      <div className="flex-1 flex flex-col justify-end w-full container mx-auto px-5 sm:px-6 pb-8 sm:pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex-1 flex flex-col justify-end w-full container mx-auto px-5 sm:px-6 pb-8 sm:pb-12">
         {announcement && (
-          <p className="text-sm sm:text-base font-semibold text-primary mb-3 sm:mb-4 [text-shadow:0_1px_10px_rgb(0_0_0/0.9)]">
+          <p className="text-sm sm:text-base font-semibold text-primary mb-3 sm:mb-4 [text-shadow:0_1px_10px_rgb(0_0_0/0.9)] animate-fade-up">
             {announcement}
           </p>
         )}
 
         <h1 className="font-display uppercase leading-[0.88] text-white text-[4.25rem] xs:text-8xl lg:text-[clamp(7rem,11.5vw,11.5rem)] break-words">
-          <span className="block sm:inline">TU </span>
-          {/* Keyed so each program's word rises in when it takes over */}
-          <span
-            key={current.id}
-            className="inline-block text-primary animate-in fade-in slide-in-from-bottom-3 duration-500"
-          >
-            {current.focus}
+          {/* Each line rises out of its own mask on load (padding keeps accents unclipped) */}
+          <span className="block overflow-hidden pt-[0.14em] -mt-[0.14em]">
+            <span className="block animate-rise">
+              <span className="block sm:inline">TU </span>
+              {/* Keyed so each program's word rises in when it takes over */}
+              <span
+                key={current.id}
+                className="inline-block text-primary animate-in fade-in slide-in-from-bottom-3 duration-500"
+              >
+                {current.focus}
+              </span>
+            </span>
           </span>
-          <span className="block">SIN LÍMITES.</span>
+          <span className="block overflow-hidden pt-[0.14em] -mt-[0.14em]">
+            <span className="block animate-rise [animation-delay:120ms]">SIN LÍMITES.</span>
+          </span>
         </h1>
 
-        <div className="mt-5 sm:mt-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div className="mt-5 sm:mt-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 animate-fade-up [animation-delay:450ms]">
           <p className="text-base md:text-lg text-gray-200 max-w-xl leading-relaxed min-h-[4.5em] sm:min-h-[3.25em]">
             {current.tagline}{" "}
             {offer && <span className="text-primary font-semibold">{offer}</span>}
@@ -162,14 +187,14 @@ export function Hero({
 
           <div className="shrink-0">
             <div className="flex flex-col sm:flex-row gap-3">
-            <Link
+            <Link viewTransition
               to="/contacto"
               id="hero-cta-primary"
               className="px-8 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest text-center hover:bg-primary-300 active:scale-[0.98] transition-[background-color,scale] duration-200"
             >
               {isOpen ? "Reservar mi clase gratis" : "Reservar mi cupón de apertura"}
             </Link>
-            <Link
+            <Link viewTransition
               to="/precios"
               id="hero-cta-secondary"
               className="px-8 py-4 border border-white/40 text-white font-bold text-sm uppercase tracking-widest text-center hover:bg-white/10 hover:border-white/70 transition-colors duration-200"
@@ -188,7 +213,7 @@ export function Hero({
 
       {/* ── Program selector: doubles as the slide progress ── */}
       <div
-        className="grid grid-cols-3 border-t border-white/15 bg-black/60 pr-20 sm:pr-0"
+        className="grid grid-cols-3 border-t border-white/15 bg-black/60 pr-20 sm:pr-0 animate-fade-up [animation-delay:650ms]"
         onMouseEnter={() => setHolding(true)}
         onMouseLeave={() => setHolding(false)}
         onFocus={() => setHolding(true)}
@@ -229,6 +254,13 @@ export function Hero({
           );
         })}
       </div>
-    </section>
+
+      {/* Darkens the pinned hero as the page scrolls over it */}
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 z-10 bg-black pointer-events-none"
+        style={{ opacity: dim }}
+      />
+    </motion.section>
   );
 }

@@ -30,7 +30,7 @@ export function WhatsAppIcon({ className }: { className?: string }) {
 
 function Logo({ className }: { className?: string }) {
   return (
-    <Link to="/" className={cn("inline-flex items-center gap-3", className)}>
+    <Link viewTransition to="/" className={cn("inline-flex items-center gap-3", className)}>
       <span className="shrink-0 bg-primary/10 p-2 rounded-full border-2 border-primary/30">
         <img
           src="/traino-svg.svg"
@@ -49,6 +49,24 @@ function Logo({ className }: { className?: string }) {
       </span>
     </Link>
   );
+}
+
+// Marks .reveal elements as shown the first time they scroll into view.
+function useScrollReveal(pathname: string) {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.setAttribute("data-shown", "");
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -12% 0px" }
+    );
+    document.querySelectorAll(".reveal:not([data-shown])").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [pathname]);
 }
 
 // ── WhatsApp floating button ──────────────────────
@@ -79,6 +97,8 @@ export function Layout({
   hideHeader?: boolean;
   hideWhatsApp?: boolean;
 }) {
+  useScrollReveal(useLocation().pathname);
+
   return (
     <div className="bg-dark text-light font-sans min-h-dvh flex flex-col">
       <a
@@ -110,16 +130,16 @@ function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-dark/95 backdrop-blur-md border-b border-white/10">
-      <nav aria-label="Principal" className="container mx-auto px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-dark/95 backdrop-blur-md border-b border-white/10 [view-transition-name:site-header]">
+      <nav aria-label="Principal" className="container mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-20">
           <Logo />
 
           {/* Desktop Navigation */}
           <ul className="hidden lg:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
-                <NavLink
+                <NavLink viewTransition
                   to={link.to}
                   className={({ isActive }) =>
                     cn(
@@ -136,7 +156,7 @@ function Header() {
             ))}
             {isAdmin && (
               <li>
-                <Link
+                <Link viewTransition
                   to="/admin"
                   className="px-3.5 py-1.5 bg-primary text-dark font-bold text-xs hover:bg-primary-300 transition-colors duration-200"
                 >
@@ -149,7 +169,7 @@ function Header() {
           {/* The site's one primary action stays reachable on every page */}
           <div className="flex items-center gap-2">
             {pathname !== "/contacto" && (
-              <Link
+              <Link viewTransition
                 to="/contacto"
                 className="px-4 py-2.5 bg-primary text-dark font-black text-xs uppercase tracking-wider whitespace-nowrap hover:bg-primary-300 transition-colors duration-200"
               >
@@ -173,10 +193,10 @@ function Header() {
 
         {/* Mobile Navigation */}
         {menuOpen && (
-          <ul id="menu-movil" className="lg:hidden pt-4 pb-2 border-t border-white/10 mt-4">
+          <ul id="menu-movil" className="lg:hidden pt-4 pb-4 border-t border-white/10">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
-                <NavLink
+                <NavLink viewTransition
                   to={link.to}
                   onClick={() => setMenuOpenAt(null)}
                   className={({ isActive }) =>
@@ -194,7 +214,7 @@ function Header() {
             ))}
             {isAdmin && (
               <li className="px-4 py-2 mt-2">
-                <Link
+                <Link viewTransition
                   to="/admin"
                   className="block w-full text-center py-2 bg-primary text-dark font-bold text-sm hover:bg-primary-300 transition-colors duration-200"
                 >
@@ -266,7 +286,7 @@ function Footer() {
             <ul className="space-y-2.5">
               {NAV_LINKS.slice(1).map((link) => (
                 <li key={link.to}>
-                  <Link
+                  <Link viewTransition
                     to={link.to}
                     className="text-gray-400 hover:text-primary text-sm transition-colors duration-200"
                   >
@@ -312,7 +332,7 @@ function Footer() {
         <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-500 text-xs">
           <p>&copy; {new Date().getFullYear()} TrainoFit.cl — Todos los derechos reservados.</p>
           <div className="flex items-center gap-4">
-            <Link
+            <Link viewTransition
               to="/admin"
               className="text-gray-600 hover:text-primary transition-colors duration-200"
             >

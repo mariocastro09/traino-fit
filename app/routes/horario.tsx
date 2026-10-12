@@ -96,7 +96,7 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
           <div className="text-center py-16 border border-white/10 bg-zinc-900/40">
             <p className="text-lg font-bold text-white mb-2">Estamos preparando el horario</p>
             <p className="text-sm text-gray-400 mb-6">Escríbenos y te contamos los bloques disponibles.</p>
-            <Link
+            <Link viewTransition
               to="/contacto"
               className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-dark font-black text-xs uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
             >
@@ -363,7 +363,7 @@ export default function Horario({ loaderData }: Route.ComponentProps) {
               )}
             </dl>
 
-            <Link
+            <Link viewTransition
               to={`/contacto?clase=${encodeURIComponent(selectedClass.name)}&dia=${encodeURIComponent(selectedClass.day)}&hora=${encodeURIComponent(selectedClass.time)}`}
               className="mt-4 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-xs tracking-widest uppercase transition-colors duration-200 flex items-center justify-center gap-2"
             >

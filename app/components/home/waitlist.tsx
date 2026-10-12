@@ -1,29 +1,62 @@
 import { Section } from "~/components/ui/section";
 import { Link } from "react-router";
-import { useEffect, useState } from "react";
+import { useInView, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
 // Shown instead of the waitlist once the opening date has passed.
 export function NowOpenSection() {
+  const ref = useRef<HTMLElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const reduceMotion = useReducedMotion();
+  // The clip is fetched when the section is about to appear and only plays while visible.
+  const near = useInView(ref, { once: true, margin: "600px 0px" });
+  const inView = useInView(ref);
+
+  useEffect(() => {
+    if (inView && !reduceMotion) video.current?.play().catch(() => {});
+    else video.current?.pause();
+  }, [inView, near, reduceMotion]);
+
   return (
-    <Section className="bg-zinc-950 border-t border-white/10 py-24 md:py-28">
-      <div className="max-w-4xl mx-auto text-center border border-primary/30 bg-primary/5 p-8 sm:p-14 reveal">
+    <Section
+      ref={ref}
+      className="relative isolate overflow-hidden bg-black border-t border-white/10 py-28 md:py-40"
+    >
+      <div className="absolute inset-0 -z-10" aria-hidden>
+        {near && (
+          <video
+            ref={video}
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/magnesio-poster.jpg"
+            className="size-full object-cover"
+          >
+            <source src="/magnesio-web.mp4" type="video/mp4" />
+          </video>
+        )}
+        <div className="absolute inset-0 bg-black/70" />
+      </div>
+
+      <div className="max-w-4xl mx-auto text-center reveal">
         <p className="eyebrow mb-4">Ya abrimos</p>
-        <h2 className="font-display text-5xl md:text-7xl uppercase text-white leading-none mb-4">
+        <h2 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl uppercase text-white leading-[0.9] mb-6">
           Tu primera clase es <span className="text-primary">gratis</span>
         </h2>
         <p className="text-gray-300 text-base md:text-lg max-w-xl mx-auto mb-10">
           Ven a conocer el gym y el box en Puente Alto. Elige un horario y un coach te recibe en tu primera sesión.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
+          <Link viewTransition
             to="/contacto"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
           >
             Reservar mi clase gratis
             <ArrowRight size={16} aria-hidden />
           </Link>
-          <Link
+          <Link viewTransition
             to="/horario"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/30 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 hover:border-white/60 transition-colors duration-200"
           >

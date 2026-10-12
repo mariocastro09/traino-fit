@@ -25,7 +25,7 @@ export function InstagramPreview() {
             <Instagram size={20} aria-hidden />
             @trainofit
           </a>
-          <Link
+          <Link viewTransition
             to="/instagram"
             className="inline-flex items-center gap-2 px-4 py-4 text-white font-bold text-sm uppercase tracking-widest underline underline-offset-8 decoration-white/40 hover:decoration-white transition-colors duration-200"
           >

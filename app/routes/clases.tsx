@@ -110,7 +110,7 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
                 Puedes administrar las clases directamente desde el panel de administración.
               </p>
             </div>
-            <Link
+            <Link viewTransition
               to="/admin?tab=classTypes"
               className="px-5 py-2.5 bg-primary text-dark text-xs font-black tracking-widest uppercase hover:bg-primary-300 transition-colors duration-200 whitespace-nowrap"
             >
@@ -132,8 +132,8 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
 
         {/* Classes Grid */}
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-24">
-          {loaderData.classes.map((item) => (
-            <ClassCard key={item.name} title={item.name} description={item.description} isAdmin={isAdmin} />
+          {loaderData.classes.map((item, i) => (
+            <ClassCard key={item.name} index={i % 3} title={item.name} description={item.description} isAdmin={isAdmin} />
           ))}
         </ul>
 
@@ -164,7 +164,7 @@ export default function Clases({ loaderData }: Route.ComponentProps) {
             <p className="text-gray-300 text-base md:text-lg mb-8 leading-relaxed">
               Prueba cualquiera de nuestros programas guiados por coaches certificados. Experimenta la energía de la comunidad Trainofit sin compromiso.
             </p>
-            <Link
+            <Link viewTransition
               to="/contacto"
               className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-sm uppercase tracking-widest transition-colors duration-200"
             >
@@ -182,7 +182,9 @@ function ClassCard({
   title,
   description,
   isAdmin,
+  index,
 }: {
+  index: number;
   title: string;
   description: string;
   isAdmin: boolean;
@@ -191,8 +193,9 @@ function ClassCard({
 
   return (
     <li
+      style={{ "--i": index } as React.CSSProperties}
       className={cn(
-        "bg-zinc-900/60 border flex flex-col justify-between reveal",
+        "bg-zinc-900/60 border flex flex-col justify-between reveal hover:-translate-y-1.5",
         featured ? "border-primary/50" : "border-white/10"
       )}
     >
@@ -236,7 +239,7 @@ function ClassCard({
       </div>
 
       <div className="p-8 pt-0 flex flex-col gap-2.5">
-        <Link
+        <Link viewTransition
           to="/horario"
           aria-label={`Ver horarios de ${title}`}
           className="text-center py-3.5 bg-white/5 border border-white/15 text-white font-bold text-xs tracking-wider uppercase hover:bg-white hover:text-dark transition-colors duration-200"
@@ -244,7 +247,7 @@ function ClassCard({
           Ver Horarios
         </Link>
         {isAdmin && (
-          <Link
+          <Link viewTransition
             to="/admin?tab=classTypes"
             className="text-center py-2.5 border border-primary/30 text-primary bg-primary/5 font-bold text-[10px] tracking-wider uppercase hover:bg-primary hover:text-dark transition-colors duration-200"
           >

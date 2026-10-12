@@ -117,12 +117,13 @@ const formatCLP = (value: number) => "$" + value.toString().replace(/\B(?=(\d{3}
 // COMPONENTS
 // ──────────────────────────────────────────────
 
-function PlanCard({ plan, groupLabel }: { plan: Plan; groupLabel: string }) {
+function PlanCard({ plan, groupLabel, index }: { plan: Plan; groupLabel: string; index: number }) {
   return (
     <li
       id={`plan-${plan.id}`}
+      style={{ "--i": index } as React.CSSProperties}
       className={cn(
-        "flex flex-col border reveal",
+        "flex flex-col border reveal hover:-translate-y-1.5",
         plan.featured ? "border-primary bg-primary/5" : "border-white/10 bg-zinc-900/60"
       )}
     >
@@ -156,7 +157,7 @@ function PlanCard({ plan, groupLabel }: { plan: Plan; groupLabel: string }) {
           ))}
         </ul>
 
-        <Link
+        <Link viewTransition
           to={`/contacto?plan=${encodeURIComponent(plan.name)}`}
           aria-label={`${plan.cta}: plan ${plan.name}`}
           className={cn(
@@ -259,8 +260,8 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
             subtitle={settings.pricing_module_box_subtitle || "Coaching, comunidad y WODs de alto rendimiento. Para quienes buscan superarse en equipo."}
           />
           <ul className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {boxPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} groupLabel={groupLabel(boxTitle)} />
+            {boxPlans.map((plan, i) => (
+              <PlanCard key={plan.id} plan={plan} index={i} groupLabel={groupLabel(boxTitle)} />
             ))}
           </ul>
         </div>
@@ -273,8 +274,8 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
             subtitle={settings.pricing_module_gym_subtitle || "Autonomía total, fuerza bruta y equipamiento de última generación. Entrena bajo tus propias reglas."}
           />
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
-            {gymPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} groupLabel={groupLabel(gymTitle)} />
+            {gymPlans.map((plan, i) => (
+              <PlanCard key={plan.id} plan={plan} index={i} groupLabel={groupLabel(gymTitle)} />
             ))}
           </ul>
         </div>
@@ -316,7 +317,7 @@ export default function Precios({ loaderData }: Route.ComponentProps) {
                     </span>
                   </p>
 
-                  <Link
+                  <Link viewTransition
                     to={`/contacto?plan=${encodeURIComponent(athletePlan.name)}`}
                     id="plan-athlete-cta"
                     className="inline-flex items-center justify-center gap-3 w-full sm:w-auto px-10 py-4 bg-primary text-dark hover:bg-primary-300 font-black text-sm uppercase tracking-widest transition-colors duration-200"

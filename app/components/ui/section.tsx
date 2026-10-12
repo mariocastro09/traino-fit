@@ -11,10 +11,12 @@ export function Section({
   size = "default",
   container = true,
   children,
+  ref,
   ...props
-}: SectionProps) {
+}: SectionProps & { ref?: React.Ref<HTMLElement> }) {
   return (
     <section
+      ref={ref}
       className={cn(
         size === "default" ? "section" : "section-sm",
         className
