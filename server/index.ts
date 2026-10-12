@@ -6,6 +6,7 @@ import { eq, asc, desc, lt } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import * as schema from './db/schema';
 import { PURPOSES, slugify } from '../app/lib/routines';
+import { generateRoutine } from './routine-generator';
 import { getAllSettings, getPublicSettings, getActivePlans, getActiveClassTypes, getActiveSchedule } from './public-data';
 
 type Bindings = {
@@ -823,350 +824,23 @@ app.post('/api/leads', async (c) => {
   }
 });
 
-// ISO 27001 A.9.4 — Admin-only AI assistant endpoint (internal tool)
-app.post('/api/assistant', requireAdmin, async (c) => {
+// ==================== ROUTINE GENERATOR ====================
+
+// Admin API - Draft a routine from a brief (see routine-generator.ts)
+app.post('/api/admin/routines/generate', requireAdmin, async (c) => {
   try {
-    const { message, history = [] } = await c.req.json();
-    if (!message) {
-      return c.json({ error: "Message is required" }, 400);
-    }
-
+    const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
-
-    // Fetch all routines from the DB
-    const dbRoutines = await db.select().from(schema.routines).all();
-
-    // Fetch available equipment from DB
-    let equipmentContext = 'No hay equipamiento registrado en el sistema.';
-    try {
-      const dbEquipment = await db.select().from(schema.equipment).all();
-      const available = dbEquipment.filter(e => e.isAvailable);
-      if (available.length > 0) {
-        equipmentContext = available.map(e =>
-          `- **${e.name}** (${e.category}): ${e.quantity} unidades disponibles${e.description ? '. ' + e.description : ''}`
-        ).join('\n');
-      }
-    } catch { /* equipment table may not exist yet */ }
-
-    // Build routines context string
-    const routinesContext = dbRoutines.map(r =>
-      `- **${r.routineName}** | ${r.exerciseName}: ${r.sets} series x ${r.reps} reps (${r.intensityPct ? r.intensityPct + '%' : 'N/A'} int.) - ${r.difficulty}. *Técnica:* ${r.description || 'Sin descripción'}`
-    ).join('\n');
-
-    // Fetch token from settings or environment
-    const hfTokenSetting = await db.select()
-      .from(schema.settings)
-      .where(eq(schema.settings.key, 'HF_TOKEN'))
-      .get();
-
-    const token = c.env.HF_TOKEN || c.env.HUGGINGFACE_TOKEN || hfTokenSetting?.value;
-    const systemPrompt = `Eres un Coach y Entrenador de CrossFit certificado de TrainoFit. Diseñas rutinas profesionales, seguras y estructuradas en español.
-
-## EQUIPAMIENTO DISPONIBLE EN EL GYM:
-${equipmentContext}
-CRÍTICO: SOLO usa ejercicios con este equipamiento. Si no hay equipo adecuado, usa peso corporal. NUNCA inventes equipamiento.
-
-## BASE DE RUTINAS EXISTENTES (referencia):
-${routinesContext || 'Sin rutinas cargadas aún.'}
-
-## ESTRUCTURA OBLIGATORIA DE RUTINAS:
-Toda rutina DEBE tener estas secciones en el campo "section" de cada ejercicio:
-- "Calentamiento" → 2-3 ejercicios de activación/movilidad (5-10 min)
-- "Principal" → bloque central de fuerza/metabólico (mayoría de ejercicios)
-- "Finalizador" → 1-2 ejercicios de cierre/cooldown o AMRAP corto
-
-Para CrossFit/WOD, las secciones válidas son: "Calentamiento", "Skill/Fuerza", "WOD", "Cooldown"
-
-## VOLUMEN POR DURACIÓN (REGLA ESTRICTA):
-- 20 min → 6-8 ejercicios totales
-- 45 min → 10-13 ejercicios totales
-- 60 min → 13-16 ejercicios totales
-- 90+ min → 16-20 ejercicios totales
-
-## REPS Y SERIES POR OBJETIVO (REGLA ESTRICTA):
-- Fuerza máxima: 3-5 series × 1-5 reps, intensidad 80-95%, descanso 180-300s
-- Fuerza/hipertrofia: 3-4 series × 6-10 reps, intensidad 70-85%, descanso 90-120s
-- Hipertrofia: 3-4 series × 10-15 reps, intensidad 60-75%, descanso 60-90s
-- Resistencia muscular: 2-3 series × 15-25 reps, intensidad 40-60%, descanso 30-60s
-- Metabólico/CrossFit: usar formato AMRAP/EMOM/For-Time en el campo reps (ej: "AMRAP 12 min", "21-15-9", "3 rounds")
-- Calentamiento: 1-2 series × 10-15 reps, sin intensidad (null), descanso 30s
-
-## REGLAS DE CALIDAD:
-1. Cada ejercicio DEBE tener "section" asignado (Calentamiento/Principal/Finalizador etc.)
-2. Cada ejercicio DEBE tener "restSeconds" (descanso real entre series)
-3. "intensityPct" solo para ejercicios con barra/peso externo. Para cardio/calistenia usar null.
-4. "description" debe incluir: cue técnico principal + consideración de seguridad (max 2 oraciones)
-5. Para ciclos de 3 días: asigna "routineName" como "Día 1: [Enfoque]", "Día 2: [Enfoque]", "Día 3: [Enfoque]" — MÍNIMO 4 ejercicios por día
-6. Principiante → menos volumen, más descanso, sin ejercicios olímpicos complejos
-7. Avanzado → mayor intensidad, menor descanso, movimientos técnicos permitidos
-
-## REGLAS DE RESPUESTA:
-1. Escribe SOLO un párrafo breve de overview (objetivo + enfoque). NO listes ejercicios en el texto.
-2. Todos los detalles van en el bloque JSON al final. El sistema los renderiza en tarjetas.
-3. Si el alumno no especificó nivel, asume Intermedio.
-4. Si el alumno no especificó duración, asume 60 min.
-
-## PROTOCOLO JSON OBLIGATORIO:
-Siempre termina tu respuesta con este bloque JSON exacto cuando propongas una rutina:
-\`\`\`json
-{
-  "action": "save_routine",
-  "routines": [
-    {
-      "routineName": "Nombre de la Rutina",
-      "exerciseName": "Nombre del Ejercicio",
-      "section": "Calentamiento",
-      "description": "Cue técnico principal. Consideración de seguridad.",
-      "sets": 2,
-      "reps": "10",
-      "intensityPct": null,
-      "restSeconds": 30,
-      "difficulty": "Intermedio"
-    },
-    {
-      "routineName": "Nombre de la Rutina",
-      "exerciseName": "Nombre del Ejercicio Principal",
-      "section": "Principal",
-      "description": "Técnica clave. Protección articular.",
-      "sets": 4,
-      "reps": "8-10",
-      "intensityPct": 75,
-      "restSeconds": 90,
-      "difficulty": "Intermedio"
-    }
-  ]
-}
-\`\`\`
-NUNCA omitas este bloque cuando diseñes una rutina.`;
-
-    let aiText = "";
-    let source = "none";
-
-    // 1. Try Hugging Face Inference API with Qwen 2.5 72B (very smart model!)
-    if (token) {
-      try {
-        const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "Qwen/Qwen2.5-72B-Instruct",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              },
-              ...history.slice(-6),
-              {
-                role: "user",
-                content: message
-              }
-            ],
-            max_tokens: 2048,
-            temperature: 0.7
-          })
-        });
-
-        if (response.ok) {
-          const data = (await response.json()) as {
-            choices?: Array<{
-              message?: {
-                content?: string;
-              };
-            }>;
-          };
-          const content = data.choices?.[0]?.message?.content;
-          if (content) {
-            aiText = content;
-            source = "huggingface-72b";
-          }
-        } else {
-          console.error("Hugging Face API returned error status:", response.status, await response.text());
-        }
-      } catch (apiErr) {
-        console.error("Failed to fetch from Hugging Face Inference API:", apiErr);
-      }
-    }
-
-    // 2. Fallback to Cloudflare Workers AI if Hugging Face failed or wasn't configured
-    if (!aiText && (c.env as any).AI) {
-      try {
-        const cfResult = await (c.env as any).AI.run('@cf/meta/llama-3-8b-instruct', {
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            ...history.slice(-6).map((h: any) => ({ role: h.role, content: h.content })),
-            {
-              role: "user",
-              content: message
-            }
-          ]
-        });
-        if (cfResult && cfResult.response) {
-          aiText = cfResult.response;
-          source = "cloudflare-workers-ai";
-        }
-      } catch (cfErr) {
-        console.error("Cloudflare Workers AI fallback failed:", cfErr);
-      }
-    }
-
-    // 3. Process AI response text and toolCall structures if we got a response
-    if (aiText) {
-      let toolCall = null;
-      let cleanedText = aiText;
-
-      // Robust Regex Fallback Parser to guarantee extraction
-      // Pass 1: find fenced code blocks containing save_routine
-      const fencedRegex = /```(?:json)?\s*([\s\S]*?)```/g;
-      let fencedMatch: RegExpExecArray | null;
-      while ((fencedMatch = fencedRegex.exec(cleanedText)) !== null) {
-        try {
-          const candidate = fencedMatch[1].trim();
-          const parsed = JSON.parse(candidate);
-          if (parsed && parsed.action === 'save_routine' && Array.isArray(parsed.routines)) {
-            toolCall = parsed;
-            cleanedText = cleanedText.replace(fencedMatch[0], '').trim();
-            break;
-          }
-        } catch { /* skip */ }
-      }
-
-      // Pass 2: bare JSON object
-      if (!toolCall) {
-        const bareRegex = /\{\s*"action"\s*:\s*"save_routine"[\s\S]*?\}/g;
-        const bareMatch = cleanedText.match(bareRegex);
-        if (bareMatch) {
-          try {
-            const parsed = JSON.parse(bareMatch[0]);
-            if (parsed && Array.isArray(parsed.routines)) {
-              toolCall = parsed;
-              cleanedText = cleanedText.replace(bareMatch[0], '').trim();
-            }
-          } catch { /* skip */ }
-        }
-      }
-
-      // Nuclear clean remaining braces/code fences
-      cleanedText = cleanedText
-        .replace(/```(?:json)?[\s\S]*?```/g, '')
-        .replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-
-      return c.json({
-        text: cleanedText || '✅ Rutina procesada correctamente.',
-        toolCall: toolCall,
-        source: source
-      });
-    }
-
-    // Local Fallback Responder (always works, zero external dependency!)
-    const normMsg = message.toLowerCase();
-    let responseText = "";
-    let localToolCall = null;
-
-    if (normMsg.includes("fuerza") || normMsg.includes("pierna") || normMsg.includes("squat") || normMsg.includes("sentadilla")) {
-      const legRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("piernas") || r.routineName.toLowerCase().includes("leg"));
-      const routinesToUse = legRoutines.length > 0 ? legRoutines : [
-        { id: 1, routineName: "Fuerza de Piernas", exerciseName: "Sentadilla Trasera (Back Squat)", sets: 4, reps: "8", intensityPct: 75, difficulty: "Intermedio", description: "Mantén el core firme y baja rompiendo el paralelo." },
-        { id: 2, routineName: "Fuerza de Piernas", exerciseName: "Peso Muerto Rumano", sets: 3, reps: "10", intensityPct: 65, difficulty: "Intermedio", description: "Enfócate en la bisagra de cadera manteniendo espalda neutra." }
-      ];
-      responseText = `💪 **Recomendación del Coach:** Te sugiero nuestra rutina de **Fuerza y Potencia de Piernas**. He preparado una secuencia enfocada en construir fuerza y potencia en el tren inferior, ideal para desarrollar tus cuádriceps, glúteos e isquiotibiales de forma segura.`;
-      
-      localToolCall = {
-        action: "save_routine",
-        routines: routinesToUse.map(r => ({
-          routineName: r.routineName,
-          exerciseName: r.exerciseName,
-          description: r.description || "Ejecutar con control",
-          sets: r.sets,
-          reps: r.reps.toString(),
-          intensityPct: r.intensityPct || 70,
-          difficulty: r.difficulty
-        }))
-      };
-    } else if (normMsg.includes("metab") || normMsg.includes("cardio") || normMsg.includes("wod") || normMsg.includes("burpee") || normMsg.includes("murph")) {
-      const cardRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("metab") || r.routineName.toLowerCase().includes("murph") || r.routineName.toLowerCase().includes("cardio"));
-      const routinesToUse = cardRoutines.length > 0 ? cardRoutines : [
-        { id: 1, routineName: "Acondicionamiento Metabólico", exerciseName: "Burpees", sets: 4, reps: "15", intensityPct: 80, difficulty: "Intermedio", description: "Mantén ritmo constante sin detenerte." },
-        { id: 2, routineName: "Acondicionamiento Metabólico", exerciseName: "Kettlebell Swings", sets: 4, reps: "20", intensityPct: 75, difficulty: "Intermedio", description: "Empuje potente desde las caderas, no uses los hombros." }
-      ];
-      responseText = `⚡ **WOD Recomendado por el Coach:** Te sugiero nuestra rutina de **Acondicionamiento Metabólico**. Está diseñada para elevar tu ritmo cardíaco, mejorar tu resistencia cardiovascular y quemar calorías de manera eficiente y dinámica.`;
-      
-      localToolCall = {
-        action: "save_routine",
-        routines: routinesToUse.map(r => ({
-          routineName: r.routineName,
-          exerciseName: r.exerciseName,
-          description: r.description || "Mantén el ritmo",
-          sets: r.sets,
-          reps: r.reps.toString(),
-          intensityPct: r.intensityPct || 75,
-          difficulty: r.difficulty
-        }))
-      };
-    } else if (normMsg.includes("empuje") || normMsg.includes("pecho") || normMsg.includes("hombro") || normMsg.includes("press")) {
-      const pushRoutines = dbRoutines.filter(r => r.routineName.toLowerCase().includes("empuje") || r.routineName.toLowerCase().includes("pecho") || r.routineName.toLowerCase().includes("push"));
-      const routinesToUse = pushRoutines.length > 0 ? pushRoutines : [
-        { id: 1, routineName: "Fuerza Empuje Superior", exerciseName: "Press de Banca Plana", sets: 4, reps: "8", intensityPct: 75, difficulty: "Intermedio", description: "Retracción escapular completa y codos a 45 grados." },
-        { id: 2, routineName: "Fuerza Empuje Superior", exerciseName: "Press Militar de Hombros", sets: 3, reps: "10", intensityPct: 70, difficulty: "Intermedio", description: "Cuerpo firme sin arquear la espalda lumbar." }
-      ];
-      responseText = `🔥 **Recomendación de Fuerza Superior:** Aquí tienes la rutina de **Fuerza de Empuje Superior**. Esta propuesta está enfocada en el empuje del tren superior para fortalecer pectoral, hombros y tríceps de manera balanceada.`;
-      
-      localToolCall = {
-        action: "save_routine",
-        routines: routinesToUse.map(r => ({
-          routineName: r.routineName,
-          exerciseName: r.exerciseName,
-          description: r.description || "Foco en la contracción",
-          sets: r.sets,
-          reps: r.reps.toString(),
-          intensityPct: r.intensityPct || 75,
-          difficulty: r.difficulty
-        }))
-      };
-    } else if (normMsg.includes("ciclo") || normMsg.includes("3 días") || normMsg.includes("split") || normMsg.includes("ppl")) {
-      responseText = `🔄 **Ciclo de Entrenamiento de 3 Días:** He estructurado un microciclo de 3 días complementarios diseñado para maximizar tus resultados. Los días están organizados en sesiones equilibradas utilizando el equipamiento disponible.`;
-      localToolCall = {
-        action: "save_routine",
-        routines: [
-          // Día 1
-          { routineName: "Día 1: Empuje (Upper Push)", exerciseName: "Press de Banca Plana", description: "Retracción escapular completa y codos a 45 grados para proteger los hombros.", sets: 4, reps: "8-10", intensityPct: 75, restSeconds: 90, difficulty: "Intermedio" },
-          { routineName: "Día 1: Empuje (Upper Push)", exerciseName: "Press Militar de Hombros", description: "Cuerpo firme, sin arquear la espalda baja, empuja directo sobre la cabeza.", sets: 3, reps: "10", intensityPct: 70, restSeconds: 60, difficulty: "Intermedio" },
-          
-          // Día 2
-          { routineName: "Día 2: Jalón (Upper Pull)", exerciseName: "Dominadas (Pull-ups)", description: "Rango de movimiento completo. Si es necesario, usa una banda elástica para asistir.", sets: 4, reps: "8", intensityPct: 65, restSeconds: 90, difficulty: "Intermedio" },
-          { routineName: "Día 2: Jalón (Upper Pull)", exerciseName: "Remo con Mancuernas", description: "Mantén el torso paralelo al suelo y lleva la mancuerna hacia tu cadera.", sets: 3, reps: "10-12", intensityPct: 70, restSeconds: 60, difficulty: "Intermedio" },
-          
-          // Día 3
-          { routineName: "Día 3: Pierna (Lower Body)", exerciseName: "Sentadilla Trasera (Back Squat)", description: "Controla la bajada, rompe el paralelo y sube con fuerza desde los talones.", sets: 4, reps: "8", intensityPct: 75, restSeconds: 120, difficulty: "Intermedio" },
-          { routineName: "Día 3: Pierna (Lower Body)", exerciseName: "Peso Muerto Rumano", description: "Enfócate en la bisagra de cadera y siente el estiramiento en los isquiotibiales.", sets: 3, reps: "10", intensityPct: 65, restSeconds: 90, difficulty: "Intermedio" }
-        ]
-      };
-    } else {
-      responseText = `👋 ¡Hola! Soy tu Coach Virtual de **TrainoFit**.\n\nPregúntame sobre rutinas de entrenamiento, ejercicios o consejos para mejorar tu técnica. Aquí tienes algunas de nuestras rutinas destacadas:\n\n` +
-        `- **Fuerza de Piernas** (Sentadillas y Peso Muerto a alta intensidad)\n` +
-        `- **Acondicionamiento Metabólico** (Burpees, Kettlebell Swings y saltos dobles)\n` +
-        `- **Fuerza de Empuje Superior** (Banca plana y Press Militar)\n` +
-        `- **WOD Murph Adaptado** (Dominadas, Flexiones y Sentadillas)\n\n` +
-        `¿Cuál te gustaría detallar o qué nivel buscas hoy? (Principiante / Intermedio / Avanzado)`;
-    }
-
-    return c.json({
-      text: responseText,
-      toolCall: localToolCall,
-      source: "local",
-      tip: token ? undefined : "Puedes configurar tu token de Hugging Face (`HF_TOKEN`) en el panel de administrador para activar la IA completa."
-    });
-
+    const [stored, equipment] = await Promise.all([
+      db.select().from(schema.settings).where(eq(schema.settings.key, 'HF_TOKEN')).get(),
+      db.select().from(schema.equipment).all(),
+    ]);
+    const inventory = equipment.filter((e) => e.isAvailable).map((e) => `${e.name} (x${e.quantity})`);
+    const result = await generateRoutine(c.env as any, stored?.value || undefined, inventory, body);
+    return c.json(result, 'error' in result ? 502 : 200);
   } catch (err: any) {
-    console.error("Error in /api/assistant:", err);
-    return c.json({ error: err.message || "Internal server error" }, 500);
+    console.error('Error in /api/admin/routines/generate:', err);
+    return c.json({ error: err.message || 'Internal server error' }, 500);
   }
 });
 
@@ -1278,6 +952,23 @@ async function applyPublishing(
   return saved;
 }
 
+// A workout exercise row from an admin request body
+function exerciseRow(ex: any, workoutId: number, difficulty: string) {
+  return {
+    workoutId,
+    routineName: String(ex.routineName),
+    exerciseName: String(ex.exerciseName),
+    description: ex.description || '',
+    sets: parseInt(ex.sets),
+    reps: String(ex.reps),
+    intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
+    restSeconds: ex.restSeconds ? parseInt(ex.restSeconds) : null,
+    // Photo folder in the exercise library; only its id characters are accepted
+    image: /^[\w.,'()&+-]{1,120}$/.test(ex.image ?? '') ? (ex.image as string) : null,
+    difficulty: ex.difficulty || difficulty,
+  };
+}
+
 // Admin API - Get all workouts with their exercises
 app.get('/api/admin/workouts', requireAdmin, async (c) => {
   try {
@@ -1325,17 +1016,7 @@ app.post('/api/admin/workouts', requireAdmin, async (c) => {
     if (body.exercises && Array.isArray(body.exercises)) {
       for (const ex of body.exercises) {
         if (!ex.routineName || !ex.exerciseName || !ex.sets || !ex.reps) continue;
-        const newEx = await db.insert(schema.workoutExercises).values({
-          workoutId,
-          routineName: ex.routineName,
-          exerciseName: ex.exerciseName,
-          description: ex.description || '',
-          sets: parseInt(ex.sets),
-          reps: String(ex.reps),
-          intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
-          restSeconds: ex.restSeconds ? parseInt(ex.restSeconds) : null,
-          difficulty: ex.difficulty || body.difficulty,
-        }).returning();
+        const newEx = await db.insert(schema.workoutExercises).values(exerciseRow(ex, workoutId, body.difficulty)).returning();
         createdExercises.push(newEx[0]);
       }
     }
@@ -1379,17 +1060,7 @@ app.put('/api/admin/workouts/:id', requireAdmin, async (c) => {
     if (body.exercises && Array.isArray(body.exercises)) {
       for (const ex of body.exercises) {
         if (!ex.routineName || !ex.exerciseName || !ex.sets || !ex.reps) continue;
-        const newEx = await db.insert(schema.workoutExercises).values({
-          workoutId: id,
-          routineName: ex.routineName,
-          exerciseName: ex.exerciseName,
-          description: ex.description || '',
-          sets: parseInt(ex.sets),
-          reps: String(ex.reps),
-          intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
-          restSeconds: ex.restSeconds ? parseInt(ex.restSeconds) : null,
-          difficulty: ex.difficulty || body.difficulty,
-        }).returning();
+        const newEx = await db.insert(schema.workoutExercises).values(exerciseRow(ex, id, body.difficulty)).returning();
         createdExercises.push(newEx[0]);
       }
     }

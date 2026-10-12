@@ -14,6 +14,7 @@
   --animate-rise: rise 0.9s var(--ease-out) both;
   --animate-fade-up: fade-up 0.8s var(--ease-out) both;
   --animate-wipe: wipe 0.9s var(--ease-out) both;
+  --animate-flip: flip 2.4s steps(1) infinite;
 
   /* Elegant Gold/Mustard Color Scheme - Dark Theme */
   --color-primary: oklch(0.72 0.13 80);
@@ -277,6 +278,17 @@ body {
   from {
     opacity: 0;
     transform: translateY(1rem);
+  }
+}
+
+/* Exercise demonstration: alternates the start and end position photos */
+@keyframes flip {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Clock, Dumbbell, Link2, Smartphone, Timer
 import { Layout, WhatsAppIcon } from "~/components/layout";
 import { PageHero } from "~/components/page-hero";
 import { Section } from "~/components/ui/section";
+import { ExerciseDemo } from "~/components/exercise-demo";
 import type { Route } from "./+types/rutina";
 import { d1, getPublishedRoutine } from "../../server/public-data";
 import { purposeLabel } from "~/lib/routines";
@@ -200,8 +201,15 @@ export default function Rutina({ loaderData: routine }: Route.ComponentProps) {
                             ) : null}
                           </p>
                         </div>
-                        {exercise.description && (
-                          <p className="mt-2 text-sm text-gray-400 leading-relaxed">{exercise.description}</p>
+                        {(exercise.image || exercise.description) && (
+                          <div className="mt-3 flex flex-col sm:flex-row gap-4">
+                            {exercise.image && (
+                              <ExerciseDemo image={exercise.image} name={exercise.exerciseName} className="aspect-[4/3] w-full sm:w-56 shrink-0" />
+                            )}
+                            {exercise.description && (
+                              <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">{exercise.description}</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </li>

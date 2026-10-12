@@ -229,7 +229,7 @@ export function EquipmentManager() {
           <Package size={32} className="text-zinc-600" />
           <p className="text-sm font-bold text-light/60">No hay equipamiento registrado</p>
           <p className="text-xs text-light/40 max-w-xs text-center">
-            Registra el inventario del gym para que el Coach IA sepa qué ejercicios puede recomendar.
+            Registra el inventario del gym para que el generador de rutinas use solo ejercicios que se pueden hacer aquí.
           </p>
           <Button onClick={handleOpenAdd} className="mt-2 bg-primary text-dark text-xs font-bold">
             <Plus size={12} className="mr-1" /> Añadir primer equipo
@@ -397,7 +397,7 @@ export function EquipmentManager() {
               </button>
               <div>
                 <p className="text-xs font-bold text-white">{form.isAvailable ? "Disponible para uso" : "No disponible"}</p>
-                <p className="text-[9px] text-light/40">El Coach IA solo usará equipo marcado como disponible</p>
+                <p className="text-[9px] text-light/40">Las rutinas generadas solo usan equipo marcado como disponible</p>
               </div>
             </div>
 

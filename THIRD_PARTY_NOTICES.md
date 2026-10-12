@@ -34,3 +34,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## free-exercise-db
+
+Exercise names, muscles, equipment, levels and the two demonstration photos of
+each exercise come from https://github.com/yuhonas/free-exercise-db, released
+into the public domain under The Unlicense. The photos are not copied into this
+repository: they are loaded from jsDelivr, pinned to one commit (see
+`app/lib/exercise-library.ts`).

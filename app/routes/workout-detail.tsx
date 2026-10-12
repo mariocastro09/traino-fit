@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Coffee, Zap
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { ExerciseDemo } from "~/components/exercise-demo";
 
 interface WorkoutExercise {
   id: number;
@@ -17,6 +18,7 @@ interface WorkoutExercise {
   reps: string;
   intensityPct?: number;
   restSeconds?: number;
+  image?: string | null;
   difficulty: string;
 }
 
@@ -524,8 +526,11 @@ export default function WorkoutDetail() {
                       {/* Expanded content */}
                       {isExpanded && (
                         <div className="px-4 pb-5 space-y-4 border-t border-white/5">
+                          {ex.image && (
+                            <ExerciseDemo image={ex.image} name={ex.exerciseName} className="mt-4 aspect-[4/3] w-full rounded-xl" />
+                          )}
                           {ex.description && (
-                            <p className="text-xs text-light/40 leading-relaxed italic pt-3 px-1 bg-white/2 rounded-xl p-3 border border-white/5">
+                            <p className="text-sm text-light/70 leading-relaxed whitespace-pre-line rounded-xl p-3 mt-3 border border-white/5">
                               {ex.description}
                             </p>
                           )}

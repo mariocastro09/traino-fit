@@ -152,6 +152,7 @@ export const workoutExercises = sqliteTable('workout_exercises', {
   intensityPct: integer('intensity_pct'),
   difficulty: text('difficulty').notNull(),
   restSeconds: integer('rest_seconds'), // rest time in seconds between sets
+  image: text('image'), // photo folder in the exercise library (app/lib/exercise-library.ts)
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });

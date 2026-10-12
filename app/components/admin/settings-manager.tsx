@@ -78,7 +78,7 @@ export function SettingsManager() {
     { id: "precios", name: "Hero Precios", icon: Coins },
     { id: "solucion", name: "Pilares", icon: Layers },
     { id: "countdown", name: "Cuenta Regresiva", icon: Clock },
-    { id: "assistant", name: "Coach IA", icon: Bot },
+    { id: "assistant", name: "IA de rutinas", icon: Bot },
   ];
 
   return (

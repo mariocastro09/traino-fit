@@ -19,6 +19,8 @@
     "db:migrate:009": "wrangler d1 execute trainofit-db --remote --file=./drizzle/migrations/0009_add_student_plan_relation.sql",
     "db:migrate:009:local": "wrangler d1 execute trainofit-db --local --file=./drizzle/migrations/0009_add_student_plan_relation.sql",
     "db:migrate:011": "wrangler d1 execute trainofit-db --remote --file=./drizzle/migrations/0011_publish_workouts.sql",
+    "db:migrate:012": "wrangler d1 execute trainofit-db --remote --file=./drizzle/migrations/0012_exercise_image.sql",
+    "db:migrate:012:local": "wrangler d1 execute trainofit-db --local --file=./drizzle/migrations/0012_exercise_image.sql",
     "db:migrate:011:local": "wrangler d1 execute trainofit-db --local --file=./drizzle/migrations/0011_publish_workouts.sql",
     "db:studio": "drizzle-kit studio"
   },

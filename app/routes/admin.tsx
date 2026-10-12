@@ -6,11 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { useNavigate, useSearchParams, Link } from "react-router";
 import {
-  LogOut, Plus, Clock, Calendar, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings, Bot, Menu, X, Package, Image as ImageIcon, Calculator
+  LogOut, Plus, Clock, List, Grid, Users, BookOpen, CalendarDays, DollarSign, Settings, Dumbbell, Menu, X, Package, Image as ImageIcon, Calculator
 } from "lucide-react";
-import { AIChatWidget } from "~/components/ai-chat-widget";
-import { RoutinesManager } from "~/components/admin/routines-manager";
-import { WorkoutsManager } from "~/components/admin/workouts-manager";
+import { RoutineStudio } from "~/components/admin/routine-studio";
 import { FlyerGenerator } from "~/components/admin/flyer-generator";
 import { ToolsManager } from "~/components/admin/tools-manager";
 import {
@@ -81,46 +79,43 @@ interface Student {
 // API is served from the same origin via Hono adapter
 const API_URL = '';
 
-type SectionId = 'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'coach' | 'equipment' | 'flyer' | 'tools';
+type SectionId = 'routines' | 'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'equipment' | 'flyer' | 'tools';
+type NavItem = { id: SectionId; label: string; icon: React.ReactNode };
 
-const NAV_GROUPS: { group: string; items: { id: SectionId; label: string; icon: React.ReactNode }[] }[] = [
-  {
-    group: 'Entrenamiento',
-    items: [
-      { id: 'coach', label: 'Entrenador IA', icon: <Bot size={16} /> },
-      { id: 'tools', label: 'Herramientas', icon: <Calculator size={16} /> },
-      { id: 'equipment', label: 'Equipamiento', icon: <Package size={16} /> },
-    ],
-  },
-  {
-    group: 'Gestión',
-    items: [
-      { id: 'students', label: 'Alumnos', icon: <Users size={16} /> },
-      { id: 'plans', label: 'Planes', icon: <DollarSign size={16} /> },
-      { id: 'schedules', label: 'Horarios', icon: <CalendarDays size={16} /> },
-      { id: 'classTypes', label: 'Tipos de Clase', icon: <BookOpen size={16} /> },
-    ],
-  },
-  {
-    group: 'Sistema',
-    items: [
-      { id: 'flyer', label: 'Creador de Flyers', icon: <ImageIcon size={16} /> },
-      { id: 'settings', label: 'Configuración', icon: <Settings size={16} /> },
-    ],
-  },
+// What the coach does every day, then everything that is set up once.
+const NAV_MAIN: NavItem[] = [
+  { id: 'routines', label: 'Rutinas', icon: <Dumbbell size={16} /> },
+  { id: 'students', label: 'Alumnos', icon: <Users size={16} /> },
+  { id: 'schedules', label: 'Horarios', icon: <CalendarDays size={16} /> },
+  { id: 'plans', label: 'Planes', icon: <DollarSign size={16} /> },
 ];
+const NAV_MORE: NavItem[] = [
+  { id: 'classTypes', label: 'Tipos de clase', icon: <BookOpen size={16} /> },
+  { id: 'equipment', label: 'Equipamiento', icon: <Package size={16} /> },
+  { id: 'tools', label: 'Calculadoras', icon: <Calculator size={16} /> },
+  { id: 'flyer', label: 'Flyers', icon: <ImageIcon size={16} /> },
+  { id: 'settings', label: 'Configuración', icon: <Settings size={16} /> },
+];
+const NAV_ALL = [...NAV_MAIN, ...NAV_MORE];
 
-const SECTION_TITLES: Record<SectionId, string> = {
-  coach: 'Entrenador IA y Rutinas',
-  tools: 'Herramientas de Coaching',
-  equipment: 'Inventario de Equipamiento',
-  students: 'Directorio de Alumnos',
-  plans: 'Planes de Suscripción',
-  schedules: 'Horarios y Clases',
-  classTypes: 'Tipos de Clase',
-  flyer: 'Generador de Flyers',
-  settings: 'Configuración General',
-};
+// The two groups of the menu; "Más" starts closed unless the open section is in it.
+function AdminNav({ active, onSelect }: { active: SectionId; onSelect: (id: SectionId) => void }) {
+  const item = (entry: NavItem) => (
+    <SidebarTabButton key={entry.id} active={active === entry.id} icon={entry.icon} label={entry.label} onClick={() => onSelect(entry.id)} />
+  );
+  return (
+    <>
+      <div className="space-y-1.5">{NAV_MAIN.map(item)}</div>
+      <details className="group" open={NAV_MORE.some((entry) => entry.id === active)}>
+        <summary className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-light/40 hover:text-white cursor-pointer list-none flex items-center justify-between">
+          Más
+          <span className="transition-transform duration-200 group-open:rotate-45" aria-hidden>+</span>
+        </summary>
+        <div className="space-y-1.5 pt-1">{NAV_MORE.map(item)}</div>
+      </details>
+    </>
+  );
+}
 
 function SidebarTabButton({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
@@ -137,21 +132,6 @@ function SidebarTabButton({ active, icon, label, onClick }: { active: boolean; i
   );
 }
 
-function MobileTabButton({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${active
-        ? 'bg-primary text-dark'
-        : 'text-light/50 hover:text-white hover:bg-white/5'
-        }`}
-    >
-      <span className={active ? 'text-white' : 'text-light/40'}>{icon}</span>
-      {label}
-    </button>
-  );
-}
-
 export default function Admin() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -159,7 +139,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
 
   // Active section management
-  const [activeSection, setActiveSection] = useState<'schedules' | 'classTypes' | 'students' | 'plans' | 'settings' | 'coach' | 'equipment' | 'flyer' | 'tools'>('coach');
+  const [activeSection, setActiveSection] = useState<SectionId>('routines');
 
   // Schedules state
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
@@ -180,15 +160,6 @@ export default function Admin() {
   // Plans state
   const [plans, setPlans] = useState<any[]>([]);
 
-  // Routines state trigger
-  const [routinesRefreshTrigger, setRoutinesRefreshTrigger] = useState(0);
-  const [coachSubTab, setCoachSubTab] = useState<'assistant' | 'workouts'>('assistant');
-  const [workoutsRefreshTrigger, setWorkoutsRefreshTrigger] = useState(0);
-  const [showRoutinesSidebar, setShowRoutinesSidebar] = useState(true);
-  const handleRoutinesUpdated = () => {
-    setRoutinesRefreshTrigger(prev => prev + 1);
-  };
-
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const timeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '10:30', '11:00', '12:00', '13:00', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
 
@@ -202,9 +173,8 @@ export default function Admin() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'classTypes' || tabParam === 'schedules' || tabParam === 'students' || tabParam === 'plans') {
-      setActiveSection(tabParam);
-    }
+    const tab = NAV_ALL.find((entry) => entry.id === tabParam);
+    if (tab) setActiveSection(tab.id);
 
     // Session is now managed via HttpOnly cookie — just verify with the server
     // Also clean up any legacy localStorage sessions
@@ -692,22 +662,9 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Sidebar Navigation — grouped into hubs */}
-          <div className="flex-grow py-6 px-4 space-y-5 overflow-y-auto scrollbar-thin">
-            {NAV_GROUPS.map((grp) => (
-              <div key={grp.group} className="space-y-1.5">
-                <p className="px-4 text-[9px] font-black uppercase tracking-widest text-light/30">{grp.group}</p>
-                {grp.items.map((item) => (
-                  <SidebarTabButton
-                    key={item.id}
-                    active={activeSection === item.id}
-                    icon={item.icon}
-                    label={item.label}
-                    onClick={() => setActiveSection(item.id)}
-                  />
-                ))}
-              </div>
-            ))}
+          {/* Sidebar Navigation */}
+          <div className="flex-grow py-6 px-4 space-y-4 overflow-y-auto scrollbar-thin">
+            <AdminNav active={activeSection} onSelect={setActiveSection} />
           </div>
 
           {/* Sidebar Footer */}
@@ -755,20 +712,7 @@ export default function Admin() {
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden fixed top-16 left-0 right-0 bg-zinc-950/95 backdrop-blur-xl border-b border-white/5 py-4 px-6 space-y-2 z-30 flex flex-col shadow-2xl">
-            {NAV_GROUPS.map((grp) => (
-              <div key={grp.group} className="space-y-1.5">
-                <p className="px-4 pt-1 text-[9px] font-black uppercase tracking-widest text-light/30">{grp.group}</p>
-                {grp.items.map((item) => (
-                  <MobileTabButton
-                    key={item.id}
-                    active={activeSection === item.id}
-                    icon={item.icon}
-                    label={item.label}
-                    onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }}
-                  />
-                ))}
-              </div>
-            ))}
+            <AdminNav active={activeSection} onSelect={(id) => { setActiveSection(id); setMobileMenuOpen(false); }} />
             <div className="border-t border-white/5 pt-3 mt-2 flex justify-between items-center">
               <span className="text-[10px] text-light/40 uppercase tracking-widest font-bold">Admin Console</span>
               <button
@@ -788,7 +732,7 @@ export default function Admin() {
             <div className="flex items-center gap-2 text-xs font-bold">
               <span className="text-light/40">Consola</span>
               <span className="text-light/20">/</span>
-              <span className="text-primary uppercase tracking-wider">{SECTION_TITLES[activeSection]}</span>
+              <span className="text-primary uppercase tracking-wider">{NAV_ALL.find((entry) => entry.id === activeSection)?.label}</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -805,88 +749,9 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Scrollable Container — adapts based on section */}
-          <div className={`flex-1 min-h-0 ${activeSection === 'coach'
-            ? 'flex flex-col overflow-hidden'
-            : 'overflow-y-auto px-4 sm:px-8 py-6 w-full mx-auto space-y-6 max-w-7xl'
-            }`}>
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 py-6 w-full mx-auto space-y-6 max-w-7xl">
 
-            {/* Dashboard Stats Overview (rendered in all sections except coach/settings/flyer/tools) */}
-            {activeSection !== 'coach' && activeSection !== 'settings' && activeSection !== 'flyer' && activeSection !== 'tools' && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Card 1: Horarios / Clases Activas */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-primary/20 overflow-hidden group">
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Clases Activas</span>
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary transition-transform duration-200">
-                      <CalendarDays size={16} />
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                      {schedules.filter(s => s.isActive).length}
-                    </span>
-                    <span className="text-[10px] text-primary/70 font-bold">
-                      / {schedules.length} total
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card 2: Tipos de Clases */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-yellow-500/20 overflow-hidden group">
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Tipos de Clases</span>
-                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 transition-transform duration-200">
-                      <BookOpen size={16} />
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                      {classTypes.filter(c => c.isActive).length}
-                    </span>
-                    <span className="text-[10px] text-yellow-500/70 font-bold">
-                      / {classTypes.length} total
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card 3: Alumnos Activos */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-emerald-500/20 overflow-hidden group">
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Alumnos Activos</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 transition-transform duration-200">
-                      <Users size={16} />
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                      {students.filter(s => s.isActive).length}
-                    </span>
-                    <span className="text-[10px] text-emerald-400/70 font-bold">
-                      / {students.length} total
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card 4: Planes Online */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-purple-500/20 overflow-hidden group">
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Planes Online</span>
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 transition-transform duration-200">
-                      <DollarSign size={16} />
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                      {plans.filter(p => p.isActive).length}
-                    </span>
-                    <span className="text-[10px] text-purple-400/70 font-bold">
-                      / {plans.length} total
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeSection === 'routines' && <RoutineStudio />}
 
             {/* Schedules Section */}
             {activeSection === 'schedules' && (
@@ -1128,7 +993,7 @@ export default function Admin() {
                   </div>
                   <div>
                     <h2 className="text-sm font-black uppercase tracking-wider text-white">Inventario de Equipamiento</h2>
-                    <p className="text-[10px] text-light/50">El Coach IA usa este inventory para sugerir ejercicios realizables con el equipo disponible</p>
+                    <p className="text-[10px] text-light/50">El generador de rutinas usa este inventario para proponer solo ejercicios realizables</p>
                   </div>
                 </div>
                 <EquipmentManager />
@@ -1167,89 +1032,6 @@ export default function Admin() {
               </div>
             )}
 
-            {/* Coach IA Section — ISO 27001 A.9.1: only accessible inside authenticated admin session */}
-            {activeSection === 'coach' && (
-              <div className="flex flex-col flex-1 min-h-0 px-4 sm:px-6 py-4 gap-4">
-                {/* Sub-tabs selector */}
-                <div className="flex gap-2 p-1 bg-zinc-900/60 rounded-xl border border-white/5 self-start">
-                  <button
-                    onClick={() => setCoachSubTab('assistant')}
-                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${coachSubTab === 'assistant'
-                      ? 'bg-primary text-dark shadow-lg shadow-primary/10'
-                      : 'text-light/50 hover:text-white'
-                      }`}
-                  >
-                    Asistente y Rutinas
-                  </button>
-                  <button
-                    onClick={() => setCoachSubTab('workouts')}
-                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${coachSubTab === 'workouts'
-                      ? 'bg-primary text-dark shadow-lg shadow-primary/10'
-                      : 'text-light/50 hover:text-white'
-                      }`}
-                  >
-                    Rutinas publicadas y enlaces
-                  </button>
-                </div>
-
-                {coachSubTab === 'assistant' ? (
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex justify-end mb-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowRoutinesSidebar(!showRoutinesSidebar)}
-                        className="bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-light/80 hover:text-white flex items-center gap-2 cursor-pointer font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md"
-                      >
-                        <span className="lg:inline hidden">
-                          {showRoutinesSidebar ? "Ocultar Base de Rutinas" : "Mostrar Base de Rutinas"}
-                        </span>
-                        <span className="lg:hidden inline">
-                          {showRoutinesSidebar ? "Ir al Chat" : "Ver Base de Rutinas"}
-                        </span>
-                      </Button>
-                    </div>
-
-                    <div className={`flex-1 min-h-0 ${showRoutinesSidebar ? "grid grid-cols-1 lg:grid-cols-12 gap-5" : "flex"} items-stretch`}>
-                      {/* Left: Routines Manager */}
-                      {showRoutinesSidebar && (
-                        <div className="col-span-1 lg:col-span-5 flex flex-col min-h-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 w-full lg:flex">
-                          <RoutinesManager
-                            onRefreshTrigger={routinesRefreshTrigger}
-                            onRoutinesUpdated={handleRoutinesUpdated}
-                          />
-                        </div>
-                      )}
-
-                      {/* Right: AI Chat — fills remaining height */}
-                      <div className={`flex flex-col min-h-0 overflow-hidden lg:flex-1 ${
-                        showRoutinesSidebar 
-                          ? "col-span-1 lg:col-span-7 lg:flex" 
-                          : "flex-1"
-                      } ${showRoutinesSidebar ? "hidden lg:flex" : "flex"}`}>
-                        <AIChatWidget
-                          embedded
-                          onRoutineSaved={() => {
-                            handleRoutinesUpdated();
-                            setWorkoutsRefreshTrigger(prev => prev + 1);
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 min-h-0 overflow-y-auto">
-                    <WorkoutsManager
-                      refreshTrigger={workoutsRefreshTrigger}
-                      onWorkoutsUpdated={() => {
-                        setWorkoutsRefreshTrigger(prev => prev + 1);
-                        handleRoutinesUpdated();
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </main>
       </div>
