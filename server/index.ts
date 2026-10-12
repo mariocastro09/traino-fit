@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq, asc, desc, lt } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import * as schema from './db/schema';
+import { PURPOSES, slugify } from '../app/lib/routines';
 import { getAllSettings, getPublicSettings, getActivePlans, getActiveClassTypes, getActiveSchedule } from './public-data';
 
 type Bindings = {
@@ -1247,6 +1248,36 @@ app.delete('/api/admin/routines/:id', requireAdmin, async (c) => {
 
 // ==================== WORKOUTS API ====================
 
+// Purpose, duration and article text of a workout, from an admin request body
+function classification(body: any) {
+  const text = (value: unknown, max: number) => String(value ?? '').trim().slice(0, max) || null;
+  return {
+    category: PURPOSES.some((p) => p.id === body.category) ? (body.category as string) : null,
+    durationMin: Number.isFinite(parseInt(body.durationMin)) ? parseInt(body.durationMin) : null,
+    summary: text(body.summary, 300),
+    body: text(body.body, 20000),
+  };
+}
+
+// Publishes or unpublishes a workout. The slug is assigned on first publish
+// and then kept, so shared links never break; the id suffix makes it unique.
+async function applyPublishing(
+  db: ReturnType<typeof drizzle<typeof schema>>,
+  workout: typeof schema.workouts.$inferSelect,
+  publish: boolean
+) {
+  if (publish === workout.isPublished && (!publish || workout.slug)) return workout;
+  const [saved] = await db.update(schema.workouts)
+    .set({
+      isPublished: publish,
+      slug: workout.slug ?? `${slugify(workout.name) || 'rutina'}-${workout.id}`,
+      publishedAt: publish ? workout.publishedAt ?? new Date() : workout.publishedAt,
+    })
+    .where(eq(schema.workouts.id, workout.id))
+    .returning();
+  return saved;
+}
+
 // Admin API - Get all workouts with their exercises
 app.get('/api/admin/workouts', requireAdmin, async (c) => {
   try {
@@ -1279,12 +1310,14 @@ app.post('/api/admin/workouts', requireAdmin, async (c) => {
 
     const token = crypto.randomUUID();
 
-    const newWorkout = await db.insert(schema.workouts).values({
+    const inserted = await db.insert(schema.workouts).values({
       name: body.name,
       description: body.description || '',
       difficulty: body.difficulty,
       magicToken: token,
+      ...classification(body),
     }).returning();
+    const newWorkout = [await applyPublishing(db, inserted[0], !!body.isPublished)];
 
     const workoutId = newWorkout[0].id;
     const createdExercises = [];
@@ -1300,6 +1333,7 @@ app.post('/api/admin/workouts', requireAdmin, async (c) => {
           sets: parseInt(ex.sets),
           reps: String(ex.reps),
           intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
+          restSeconds: ex.restSeconds ? parseInt(ex.restSeconds) : null,
           difficulty: ex.difficulty || body.difficulty,
         }).returning();
         createdExercises.push(newEx[0]);
@@ -1322,19 +1356,21 @@ app.put('/api/admin/workouts/:id', requireAdmin, async (c) => {
     const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
 
-    const updated = await db.update(schema.workouts)
+    const saved = await db.update(schema.workouts)
       .set({
         name: body.name,
         description: body.description,
         difficulty: body.difficulty,
+        ...classification(body),
         updatedAt: new Date(),
       })
       .where(eq(schema.workouts.id, id))
       .returning();
 
-    if (updated.length === 0) {
+    if (saved.length === 0) {
       return c.json({ error: 'Workout not found' }, 404);
     }
+    const updated = [await applyPublishing(db, saved[0], !!body.isPublished)];
 
     // Replace the exercises
     await db.delete(schema.workoutExercises).where(eq(schema.workoutExercises.workoutId, id));
@@ -1351,6 +1387,7 @@ app.put('/api/admin/workouts/:id', requireAdmin, async (c) => {
           sets: parseInt(ex.sets),
           reps: String(ex.reps),
           intensityPct: ex.intensityPct ? parseInt(ex.intensityPct) : null,
+          restSeconds: ex.restSeconds ? parseInt(ex.restSeconds) : null,
           difficulty: ex.difficulty || body.difficulty,
         }).returning();
         createdExercises.push(newEx[0]);

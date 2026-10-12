@@ -1188,7 +1188,7 @@ export default function Admin() {
                       : 'text-light/50 hover:text-white'
                       }`}
                   >
-                    Workouts Alumnos (Magic Links)
+                    Rutinas publicadas y enlaces
                   </button>
                 </div>
 

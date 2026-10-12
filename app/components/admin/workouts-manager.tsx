@@ -12,6 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ExercisePicker } from "~/components/admin/exercise-picker";
+import { PURPOSES, purposeLabel, type PurposeId } from "~/lib/routines";
 
 interface WorkoutExercise {
   id?: number;
@@ -31,6 +33,13 @@ interface Workout {
   description?: string;
   difficulty: string;
   magicToken: string;
+  // Classification and publishing as an article at /rutinas/<slug>
+  slug?: string | null;
+  category?: string | null;
+  durationMin?: number | null;
+  summary?: string | null;
+  body?: string | null;
+  isPublished?: boolean;
   exercises: WorkoutExercise[];
   createdAt?: string;
   updatedAt?: string;
@@ -69,6 +78,12 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("Intermedio");
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [category, setCategory] = useState<PurposeId | "">("");
+  const [durationMin, setDurationMin] = useState("");
+  const [summary, setSummary] = useState("");
+  const [body, setBody] = useState("");
+  const [isPublished, setIsPublished] = useState(false);
+  const [purposeFilter, setPurposeFilter] = useState("");
 
   // Search Template state inside dialog
   const [templateSearch, setTemplateSearch] = useState("");
@@ -114,9 +129,12 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
     setName("");
     setDescription("");
     setDifficulty("Intermedio");
-    setExercises([
-      { routineName: "Calentamiento", exerciseName: "", sets: 3, reps: "10", restSeconds: 60, difficulty: "Intermedio" }
-    ]);
+    setExercises([]);
+    setCategory("");
+    setDurationMin("");
+    setSummary("");
+    setBody("");
+    setIsPublished(false);
     setFormError(""); setShowDialog(true);
   };
 
@@ -126,6 +144,11 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
     setDescription(workout.description || "");
     setDifficulty(workout.difficulty);
     setExercises(workout.exercises.map(e => ({ ...e })));
+    setCategory((workout.category as PurposeId) || "");
+    setDurationMin(workout.durationMin ? String(workout.durationMin) : "");
+    setSummary(workout.summary || "");
+    setBody(workout.body || "");
+    setIsPublished(!!workout.isPublished);
     setFormError(""); setShowDialog(true);
   };
 
@@ -199,6 +222,11 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
           name,
           description,
           difficulty,
+          category,
+          durationMin,
+          summary,
+          body,
+          isPublished,
           exercises
         })
       });
@@ -264,7 +292,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
       difficultyFilter === "todos" || 
       w.difficulty.toLowerCase() === difficultyFilter.toLowerCase();
 
-    return matchesSearch && matchesDifficulty;
+    return matchesSearch && matchesDifficulty && (!purposeFilter || w.category === purposeFilter);
   });
 
   const getDifficultyColor = (diff: string) => {
@@ -294,8 +322,8 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
             <Sparkles size={16} />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-white">Entrenamientos (Workouts)</p>
-            <p className="text-[10px] text-light/50 font-medium">Enlaces Mágicos para Alumnos</p>
+            <p className="text-xs font-black uppercase tracking-wider text-white">Rutinas y entrenamientos</p>
+            <p className="text-[10px] text-light/50 font-medium">Enlaces para alumnos y artículos publicados en /rutinas</p>
           </div>
         </div>
         <Button 
@@ -304,7 +332,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
           className="bg-primary text-dark transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8"
         >
           <Plus size={14} className="mr-1" />
-          <span>Crear Workout</span>
+          <span>Crear rutina</span>
         </Button>
       </div>
 
@@ -329,6 +357,17 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
           <option value="principiante">Principiante</option>
           <option value="intermedio">Intermedio</option>
           <option value="avanzado">Avanzado</option>
+        </select>
+        <select
+          aria-label="Filtrar por propósito"
+          value={purposeFilter}
+          onChange={(e) => setPurposeFilter(e.target.value)}
+          className="bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-light/80 outline-none focus:border-primary/40"
+        >
+          <option value="">Todos los propósitos</option>
+          {PURPOSES.map((purpose) => (
+            <option key={purpose.id} value={purpose.id}>{purpose.label}</option>
+          ))}
         </select>
       </div>
 
@@ -370,6 +409,16 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                       <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getDifficultyColor(w.difficulty)}`}>
                         {w.difficulty}
                       </span>
+                      {w.category && (
+                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border border-primary/30 text-primary">
+                          {purposeLabel(w.category)}
+                        </span>
+                      )}
+                      {w.isPublished && (
+                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                          Publicada
+                        </span>
+                      )}
                       <span className="text-[9px] text-light/40 font-bold">
                         {sectionsCount} sección(es) · {w.exercises.length} ejercicio(s)
                       </span>
@@ -388,6 +437,16 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
 
                   {/* Actions */}
                   <div className="flex gap-1 items-center flex-shrink-0">
+                    {w.isPublished && w.slug && (
+                      <a
+                        href={`/rutinas/${w.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded bg-zinc-800 text-light/75 hover:text-white border border-white/5 transition-colors text-[9px]"
+                      >
+                        Ver artículo
+                      </a>
+                    )}
                     <button
                       onClick={() => handleCopyLink(w.magicToken)}
                       className={`p-1.5 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1 border transition-all ${
@@ -470,7 +529,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
         <DialogContent className="sm:max-w-[850px] max-h-[85vh] overflow-y-auto bg-zinc-950 border border-white/10 text-white shadow-2xl scrollbar-thin">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">
-              {editingId ? "Editar Entrenamiento" : "Crear Nuevo Entrenamiento"}
+              {editingId ? "Editar rutina" : "Crear rutina"}
             </DialogTitle>
           </DialogHeader>
 
@@ -480,13 +539,13 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
                 <label className="block">
-                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre del Workout *</span>
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre de la rutina *</span>
                   <input
                     type="text"
                     className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ej: Lunes - Fuerza de Squat + Metcon"
+                    placeholder="Ej: Piernas de acero: fuerza + metcon"
                   />
                 </label>
               </div>
@@ -502,6 +561,39 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                     <option value="Intermedio">Intermedio</option>
                     <option value="Avanzado">Avanzado</option>
                   </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Propósito</span>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as PurposeId | "")}
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                  >
+                    <option value="">Sin clasificar</option>
+                    {PURPOSES.map((purpose) => (
+                      <option key={purpose.id} value={purpose.id}>
+                        {purpose.label} — {purpose.blurb}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Duración (min)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={durationMin}
+                    onChange={(e) => setDurationMin(e.target.value)}
+                    placeholder="Ej: 45"
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                  />
                 </label>
               </div>
             </div>
@@ -562,6 +654,12 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                 </div>
               )}
             </div>
+
+            <ExercisePicker
+              purpose={category}
+              defaultSection={exercises.at(-1)?.routineName || "Principal"}
+              onAdd={(picked) => setExercises((current) => [...current, { ...picked, difficulty }])}
+            />
 
             {/* Exercises checklist section */}
             <div className="space-y-2">
@@ -703,6 +801,51 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
               </div>
             </div>
 
+            {/* Publishing as an article */}
+            <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="mt-0.5 size-4 accent-[var(--color-primary)]"
+                />
+                <span>
+                  <span className="block text-xs font-black uppercase tracking-wider text-white">Publicar en la web</span>
+                  <span className="block text-[10px] text-light/60">
+                    Aparece en trainofit.cl/rutinas como artículo que cualquiera puede leer, compartir y seguir desde el celular.
+                  </span>
+                </span>
+              </label>
+              {isPublished && (
+                <>
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Resumen (1–2 frases)</span>
+                    <input
+                      type="text"
+                      maxLength={300}
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      placeholder="Ej: 45 minutos de fuerza de piernas con un metcon corto para cerrar."
+                      className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">
+                      Artículo (opcional) — línea en blanco para separar párrafos, “## ” al inicio para un subtítulo
+                    </span>
+                    <textarea
+                      rows={6}
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      placeholder={"Para quién es esta rutina, qué vas a trabajar y cómo progresar.\n\n## Antes de empezar\nCalienta bien y elige una carga que puedas controlar."}
+                      className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white leading-relaxed"
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+
             <p role="alert" className="text-red-400 text-xs font-bold text-right empty:hidden">{formError}</p>
             <div className="flex gap-2 justify-end pt-3 border-t border-white/5">
               <Button variant="outline" size="sm" onClick={() => setShowDialog(false)}>
@@ -712,7 +855,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                 onClick={handleSave} 
                 className="bg-primary text-dark transition-all duration-200 font-bold text-xs"
               >
-                {editingId ? "Actualizar Workout" : "Crear Workout"}
+                {editingId ? "Guardar cambios" : isPublished ? "Crear y publicar" : "Crear rutina"}
               </Button>
             </div>
           </div>

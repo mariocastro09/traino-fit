@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, desc, and } from 'drizzle-orm';
 import * as schema from './db/schema';
 import type { AppLoadContext } from '../load-context';
 
@@ -40,6 +40,35 @@ export function getActiveSchedule(d1: D1Database) {
   return drizzle(d1, { schema }).query.classSchedule.findMany({
     where: eq(schema.classSchedule.isActive, true),
   });
+}
+
+// Published routines with their exercises, newest first.
+export async function getPublishedRoutines(d1: D1Database) {
+  const db = drizzle(d1, { schema });
+  const [routines, exercises] = await Promise.all([
+    db.query.workouts.findMany({
+      where: eq(schema.workouts.isPublished, true),
+      orderBy: [desc(schema.workouts.publishedAt)],
+    }),
+    db.query.workoutExercises.findMany(),
+  ]);
+  return routines.map((routine) => ({
+    ...routine,
+    exercises: exercises.filter((e) => e.workoutId === routine.id),
+  }));
+}
+
+export async function getPublishedRoutine(d1: D1Database, slug: string) {
+  const db = drizzle(d1, { schema });
+  const routine = await db.query.workouts.findFirst({
+    where: and(eq(schema.workouts.slug, slug), eq(schema.workouts.isPublished, true)),
+  });
+  if (!routine) return null;
+  const exercises = await db.query.workoutExercises.findMany({
+    where: eq(schema.workoutExercises.workoutId, routine.id),
+    orderBy: [asc(schema.workoutExercises.id)],
+  });
+  return { ...routine, exercises };
 }
 
 // Loaders must render the page even if the database is unreachable.

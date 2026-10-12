@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { to: "/clases", label: "Clases" },
   { to: "/horario", label: "Horario" },
   { to: "/precios", label: "Precios" },
+  { to: "/rutinas", label: "Rutinas" },
   { to: "/instagram", label: "Instagram" },
   { to: "/contacto", label: "Contacto" },
 ];
@@ -137,7 +138,8 @@ function Header() {
 
           {/* Desktop Navigation */}
           <ul className="hidden lg:flex items-center gap-8">
-            {NAV_LINKS.map((link) => (
+            {/* Instagram stays in the mobile menu and footer; the bar has room for six */}
+            {NAV_LINKS.filter((link) => link.to !== "/instagram").map((link) => (
               <li key={link.to}>
                 <NavLink viewTransition
                   to={link.to}

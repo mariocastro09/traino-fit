@@ -1,5 +1,6 @@
 import { useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
+import { cn } from "~/lib/utils";
 
 // Opening shot shared by the inner pages: footage behind a headline that
 // rises out of a mask, the same entrance as the home hero.
@@ -9,6 +10,7 @@ export function PageHero({
   eyebrow,
   title,
   subtitle,
+  compact = false,
   children,
 }: {
   /** Base name of the clip and poster in /public, e.g. "page-clases" */
@@ -18,6 +20,8 @@ export function PageHero({
   eyebrow: string;
   title: React.ReactNode;
   subtitle: React.ReactNode;
+  /** Smaller headline, for long titles such as article names */
+  compact?: boolean;
   children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -34,7 +38,7 @@ export function PageHero({
   return (
     <header
       ref={ref}
-      className="relative isolate overflow-hidden bg-black text-white min-h-[26rem] h-[58dvh] flex flex-col justify-end"
+      className="relative isolate overflow-hidden bg-black text-white min-h-[max(26rem,58dvh)] pt-24 flex flex-col justify-end"
     >
       <div className="absolute inset-0 -z-10" aria-hidden>
         <video
@@ -54,7 +58,12 @@ export function PageHero({
 
       <div className="container mx-auto px-4 sm:px-6 pb-10 sm:pb-14">
         <p className="eyebrow mb-4 animate-fade-up">{eyebrow}</p>
-        <h1 className="font-display uppercase leading-[0.9] text-6xl sm:text-8xl lg:text-9xl">
+        <h1
+          className={cn(
+            "font-display uppercase leading-[0.9]",
+            compact ? "text-5xl sm:text-6xl lg:text-7xl max-w-4xl" : "text-6xl sm:text-8xl lg:text-9xl"
+          )}
+        >
           <span className="block overflow-hidden pt-[0.14em] -mt-[0.14em]">
             <span className="block animate-rise">{title}</span>
           </span>

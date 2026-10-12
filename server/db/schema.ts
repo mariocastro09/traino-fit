@@ -129,6 +129,14 @@ export const workouts = sqliteTable('workouts', {
   description: text('description'),
   difficulty: text('difficulty').notNull(), // 'Principiante', 'Intermedio', 'Avanzado'
   magicToken: text('magic_token').notNull().unique(),
+  // Classification and publishing as an article at /rutinas/<slug>
+  slug: text('slug').unique(),
+  category: text('category'), // purpose id from app/lib/routines.ts: 'crossfit', 'fuerza', 'futbol', ...
+  durationMin: integer('duration_min'),
+  summary: text('summary'), // one or two sentences shown on cards and under the title
+  body: text('body'), // article text; blank lines split paragraphs, "## " starts a subheading
+  isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(false),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
