@@ -96,9 +96,9 @@ export function ScheduleCard({
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`relative group p-2.5 rounded-xl border transition-all duration-300 cursor-grab active:cursor-grabbing ${
+        className={`relative group p-2.5 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing ${
           schedule.isActive 
-            ? 'bg-zinc-900/50 border-white/5 hover:border-white/10 hover:scale-[1.02] shadow-lg shadow-black/20' 
+            ? 'bg-zinc-900/50 border-white/5 hover:border-white/10 shadow-lg shadow-black/20' 
             : 'bg-zinc-900/20 border-white/5 opacity-40'
         }`}
         {...attributes}

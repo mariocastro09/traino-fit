@@ -1,6 +1,39 @@
 import { Section } from "~/components/ui/section";
+import { Link } from "react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
+
+// Shown instead of the waitlist once the opening date has passed.
+export function NowOpenSection() {
+  return (
+    <Section className="bg-zinc-950 border-t border-white/10 py-24 md:py-28">
+      <div className="max-w-4xl mx-auto text-center border border-primary/30 bg-primary/5 p-8 sm:p-14 reveal">
+        <p className="eyebrow mb-4">Ya abrimos</p>
+        <h2 className="font-display text-5xl md:text-7xl uppercase text-white leading-none mb-4">
+          Tu primera clase es <span className="text-primary">gratis</span>
+        </h2>
+        <p className="text-gray-300 text-base md:text-lg max-w-xl mx-auto mb-10">
+          Ven a conocer el gym y el box en Puente Alto. Elige un horario y un coach te recibe en tu primera sesión.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/contacto"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest hover:bg-primary-300 transition-colors duration-200"
+          >
+            Reservar mi clase gratis
+            <ArrowRight size={16} aria-hidden />
+          </Link>
+          <Link
+            to="/horario"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/30 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 hover:border-white/60 transition-colors duration-200"
+          >
+            Ver horarios
+          </Link>
+        </div>
+      </div>
+    </Section>
+  );
+}
 
 const UNITS = [
   { label: "Días", ms: 86_400_000, mod: Infinity },

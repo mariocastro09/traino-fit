@@ -572,16 +572,18 @@ export function FlyerGenerator() {
           {/* Theme & Mode Selector */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1.5">Esquema de Colores</label>
-              <select
-                value={styleTheme}
-                onChange={(e) => setStyleTheme(e.target.value as any)}
-                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-white outline-none focus:border-primary/40"
-              >
-                <option value="amber">Ámbar Warm</option>
-                <option value="crimson">Rojo Nitro</option>
-                <option value="dark">Monocromo</option>
-              </select>
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1.5">Esquema de Colores</span>
+                <select
+                  value={styleTheme}
+                  onChange={(e) => setStyleTheme(e.target.value as any)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-white outline-none focus:border-primary/40"
+                >
+                  <option value="amber">Ámbar Warm</option>
+                  <option value="crimson">Rojo Nitro</option>
+                  <option value="dark">Monocromo</option>
+                </select>
+              </label>
             </div>
 
             <div>
@@ -617,29 +619,33 @@ export function FlyerGenerator() {
             
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Alineación</label>
-                <select
-                  value={logoPosition}
-                  onChange={(e) => setLogoPosition(e.target.value as any)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-primary/40"
-                >
-                  <option value="top-center">Superior Centro</option>
-                  <option value="top-left">Superior Izquierda</option>
-                  <option value="bottom-right">Inferior Derecha</option>
-                  <option value="none">Ocultar Logo</option>
-                </select>
+                <label className="block">
+                  <span className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Alineación</span>
+                  <select
+                    value={logoPosition}
+                    onChange={(e) => setLogoPosition(e.target.value as any)}
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-primary/40"
+                  >
+                    <option value="top-center">Superior Centro</option>
+                    <option value="top-left">Superior Izquierda</option>
+                    <option value="bottom-right">Inferior Derecha</option>
+                    <option value="none">Ocultar Logo</option>
+                  </select>
+                </label>
               </div>
 
               <div>
-                <label className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Origen del Logo</label>
-                <select
-                  value={logoSource}
-                  onChange={(e) => setLogoSource(e.target.value as any)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-primary/40"
-                >
-                  <option value="default">Logo TrainoFit</option>
-                  <option value="custom">Subir Personalizado</option>
-                </select>
+                <label className="block">
+                  <span className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Origen del Logo</span>
+                  <select
+                    value={logoSource}
+                    onChange={(e) => setLogoSource(e.target.value as any)}
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-white outline-none focus:border-primary/40"
+                  >
+                    <option value="default">Logo TrainoFit</option>
+                    <option value="custom">Subir Personalizado</option>
+                  </select>
+                </label>
               </div>
             </div>
 
@@ -680,16 +686,18 @@ export function FlyerGenerator() {
           {/* Premium Visual Effects Section */}
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Trama Fondo</label>
-              <select
-                value={backgroundPattern}
-                onChange={(e) => setBackgroundPattern(e.target.value as any)}
-                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-white outline-none focus:border-primary/40"
-              >
-                <option value="dots">Puntos Sport</option>
-                <option value="stripes">Líneas Vel.</option>
-                <option value="clean">Simple</option>
-              </select>
+              <label className="block">
+                <span className="block text-[9px] font-extrabold uppercase tracking-wider text-light/40 mb-1">Trama Fondo</span>
+                <select
+                  value={backgroundPattern}
+                  onChange={(e) => setBackgroundPattern(e.target.value as any)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-white outline-none focus:border-primary/40"
+                >
+                  <option value="dots">Puntos Sport</option>
+                  <option value="stripes">Líneas Vel.</option>
+                  <option value="clean">Simple</option>
+                </select>
+              </label>
             </div>
             
             <button
@@ -720,89 +728,103 @@ export function FlyerGenerator() {
           {/* Conditionally show workout import dropdown */}
           {template === "wod" && (
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Importar Workout Guardado</label>
-              <select
-                value={selectedWorkoutId}
-                onChange={(e) => setSelectedWorkoutId(e.target.value)}
-                className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-primary/40"
-              >
-                <option value="custom">✍️ Escribir rutina personalizada...</option>
-                {workouts.map(w => (
-                  <option key={w.id} value={w.id.toString()}>🏋️ {w.name} ({w.difficulty})</option>
-                ))}
-              </select>
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Importar Workout Guardado</span>
+                <select
+                  value={selectedWorkoutId}
+                  onChange={(e) => setSelectedWorkoutId(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-primary/40"
+                >
+                  <option value="custom">✍️ Escribir rutina personalizada...</option>
+                  {workouts.map(w => (
+                    <option key={w.id} value={w.id.toString()}>🏋️ {w.name} ({w.difficulty})</option>
+                  ))}
+                </select>
+              </label>
             </div>
           )}
 
           {/* Text Customization Fields */}
           <div className="space-y-3 pt-1">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Título Principal</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value.toUpperCase())}
-                placeholder="Título del flyer"
-                className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
-              />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Título Principal</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value.toUpperCase())}
+                  placeholder="Título del flyer"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
+                />
+              </label>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Subtítulo / Dificultad</label>
-              <input
-                type="text"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value.toUpperCase())}
-                placeholder="Subtítulo informativo"
-                className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
-              />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Subtítulo / Dificultad</span>
+                <input
+                  type="text"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value.toUpperCase())}
+                  placeholder="Subtítulo informativo"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
+                />
+              </label>
             </div>
 
             {template === "wod" ? (
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Lista de Ejercicios</label>
-                <textarea
-                  value={wodExercises}
-                  onChange={(e) => setWodExercises(e.target.value)}
-                  rows={6}
-                  placeholder="1. Ejercicio: 4 series x 10 reps..."
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white font-mono resize-none outline-none focus:border-primary/40 scrollbar-thin"
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Lista de Ejercicios</span>
+                  <textarea
+                    value={wodExercises}
+                    onChange={(e) => setWodExercises(e.target.value)}
+                    rows={6}
+                    placeholder="1. Ejercicio: 4 series x 10 reps..."
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white font-mono resize-none outline-none focus:border-primary/40 scrollbar-thin"
+                  />
+                </label>
               </div>
             ) : (
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Texto Descriptivo</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Detalles de la promoción..."
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white resize-none outline-none focus:border-primary/40"
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Texto Descriptivo</span>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Detalles de la promoción..."
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white resize-none outline-none focus:border-primary/40"
+                  />
+                </label>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-2">
               <div className="col-span-2">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Línea de Llamado (CTA)</label>
-                <input
-                  type="text"
-                  value={ctaText}
-                  onChange={(e) => setCtaText(e.target.value)}
-                  placeholder="Llamado a la acción (WhatsApp, sitio web)"
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Línea de Llamado (CTA)</span>
+                  <input
+                    type="text"
+                    value={ctaText}
+                    onChange={(e) => setCtaText(e.target.value)}
+                    placeholder="Llamado a la acción (WhatsApp, sitio web)"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
+                  />
+                </label>
               </div>
               
               <div className="col-span-2">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Etiqueta de Valor / Badge</label>
-                <input
-                  type="text"
-                  value={priceTag}
-                  onChange={(e) => setPriceTag(e.target.value)}
-                  placeholder="Ej: Planes desde $29.990"
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/50 mb-1">Etiqueta de Valor / Badge</span>
+                  <input
+                    type="text"
+                    value={priceTag}
+                    onChange={(e) => setPriceTag(e.target.value)}
+                    placeholder="Ej: Planes desde $29.990"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-primary/40"
+                  />
+                </label>
               </div>
             </div>
           </div>

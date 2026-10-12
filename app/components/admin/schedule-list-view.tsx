@@ -80,7 +80,7 @@ export function ScheduleListView({
                   return (
                     <div
                       key={schedule.id}
-                      className={`relative pl-4 sm:pl-6 p-4 rounded-xl border transition-all duration-300 ${
+                      className={`relative pl-4 sm:pl-6 p-4 rounded-xl border transition-all duration-200 ${
                         schedule.isActive 
                           ? 'bg-zinc-900/40 border-white/5 hover:border-white/10' 
                           : 'bg-zinc-900/10 border-white/5 opacity-50'

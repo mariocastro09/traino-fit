@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirmDialog, ConfirmDialogHost } from "~/components/ui/confirm-dialog";
 import { Layout } from "~/components/layout";
 import { Section } from "~/components/ui/section";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -125,7 +126,7 @@ function SidebarTabButton({ active, icon, label, onClick }: { active: boolean; i
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${active
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${active
         ? 'bg-primary text-dark shadow-lg shadow-primary/10 scale-[1.01]'
         : 'text-light/50 hover:text-white hover:bg-white/5'
         }`}
@@ -342,7 +343,7 @@ export default function Admin() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar este horario?')) return;
+    if (!(await confirmDialog('¿Estás seguro de eliminar este horario?'))) return;
 
     try {
       const response = await fetch(`${API_URL}/api/admin/schedule/${id}`, {
@@ -623,7 +624,7 @@ export default function Admin() {
   if (loading) {
     return (
       <Layout>
-        <Section className="min-h-screen flex items-center justify-center">
+        <Section className="min-h-dvh flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-light/70">Verificando sesión...</p>
@@ -636,15 +637,14 @@ export default function Admin() {
   if (!authenticated) {
     return (
       <Layout>
-        <Section className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <Section className="min-h-dvh flex items-center justify-center relative overflow-hidden">
           {/* Background Radial Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
           <Card className="max-w-md w-full bg-zinc-950/80 border border-white/10 backdrop-blur-xl relative z-10 shadow-2xl shadow-black/80">
             <CardHeader className="text-center pt-8">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-600 p-0.5 shadow-lg shadow-primary/20 mx-auto mb-6 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/30 p-0.5 mx-auto mb-6 flex items-center justify-center">
                 <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center">
-                  <Users size={24} className="text-primary animate-pulse" />
+                  <Users size={24} className="text-primary" />
                 </div>
               </div>
               <CardTitle className="text-2xl font-black uppercase tracking-wider text-white">Panel de Control</CardTitle>
@@ -655,7 +655,7 @@ export default function Admin() {
             <CardContent className="pb-8">
               <Button
                 onClick={handleLogin}
-                className="w-full bg-primary hover:bg-primary/90 text-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-bold py-6 text-base shadow-lg shadow-primary/10"
+                className="w-full bg-primary hover:bg-primary-300 text-dark active:scale-[0.98] transition-all duration-200 font-bold py-6 text-base shadow-lg shadow-primary/10"
               >
                 Iniciar Sesión con Google
               </Button>
@@ -668,9 +668,8 @@ export default function Admin() {
 
   return (
     <Layout hideFooter={true} hideHeader={true} hideWhatsApp={true}>
-      <div className="flex h-screen bg-zinc-950 text-light relative overflow-hidden w-full">
+      <div className="flex h-dvh bg-zinc-950 text-light relative overflow-hidden w-full">
         {/* Background Radial Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[160px] pointer-events-none" />
 
         {/* Sidebar */}
         <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-zinc-950/80 backdrop-blur-xl flex-shrink-0 relative z-20">
@@ -744,6 +743,8 @@ export default function Admin() {
             <span className="text-sm font-black uppercase text-white tracking-wide">TRAINOFIT</span>
           </div>
           <button
+            aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-light hover:bg-white/5 transition-colors"
           >
@@ -792,7 +793,7 @@ export default function Admin() {
 
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 Conectado
               </span>
               <Link
@@ -814,11 +815,10 @@ export default function Admin() {
             {activeSection !== 'coach' && activeSection !== 'settings' && activeSection !== 'flyer' && activeSection !== 'tools' && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Horarios / Clases Activas */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-primary/20 hover:shadow-[0_0_20px_rgba(212,160,23,0.05)] overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-transparent" />
+                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-primary/20 overflow-hidden group">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Clases Activas</span>
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary transition-transform duration-200">
                       <CalendarDays size={16} />
                     </div>
                   </div>
@@ -833,11 +833,10 @@ export default function Admin() {
                 </div>
 
                 {/* Card 2: Tipos de Clases */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-yellow-500/20 hover:shadow-[0_0_20px_rgba(234,179,8,0.05)] overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-yellow-500 to-transparent" />
+                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-yellow-500/20 overflow-hidden group">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Tipos de Clases</span>
-                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 transition-transform duration-200">
                       <BookOpen size={16} />
                     </div>
                   </div>
@@ -852,11 +851,10 @@ export default function Admin() {
                 </div>
 
                 {/* Card 3: Alumnos Activos */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.05)] overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-transparent" />
+                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-emerald-500/20 overflow-hidden group">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Alumnos Activos</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 transition-transform duration-200">
                       <Users size={16} />
                     </div>
                   </div>
@@ -871,11 +869,10 @@ export default function Admin() {
                 </div>
 
                 {/* Card 4: Planes Online */}
-                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:border-purple-500/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.05)] overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500 to-transparent" />
+                <div className="relative p-5 rounded-2xl bg-zinc-950/40 border border-white/5 backdrop-blur-xl flex flex-col justify-between transition-all duration-200 hover:border-purple-500/20 overflow-hidden group">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-[10px] uppercase font-black tracking-wider text-light/90">Planes Online</span>
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 transition-transform duration-200">
                       <DollarSign size={16} />
                     </div>
                   </div>
@@ -1177,7 +1174,7 @@ export default function Admin() {
                 <div className="flex gap-2 p-1 bg-zinc-900/60 rounded-xl border border-white/5 self-start">
                   <button
                     onClick={() => setCoachSubTab('assistant')}
-                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${coachSubTab === 'assistant'
+                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${coachSubTab === 'assistant'
                       ? 'bg-primary text-dark shadow-lg shadow-primary/10'
                       : 'text-light/50 hover:text-white'
                       }`}
@@ -1186,7 +1183,7 @@ export default function Admin() {
                   </button>
                   <button
                     onClick={() => setCoachSubTab('workouts')}
-                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${coachSubTab === 'workouts'
+                    className={`py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${coachSubTab === 'workouts'
                       ? 'bg-primary text-dark shadow-lg shadow-primary/10'
                       : 'text-light/50 hover:text-white'
                       }`}
@@ -1256,6 +1253,7 @@ export default function Admin() {
           </div>
         </main>
       </div>
+      <ConfirmDialogHost />
     </Layout>
   );
 }

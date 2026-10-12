@@ -223,7 +223,7 @@ export function ToolsManager() {
   return (
     <div className="flex flex-col rounded-2xl border border-white/8 bg-zinc-950/80 overflow-hidden backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-zinc-900 to-zinc-950 border-b border-white/8">
+      <div className="flex items-center gap-2.5 px-4 py-3 bg-zinc-900 border-b border-white/8">
         <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
           <Calculator size={16} />
         </div>
@@ -260,20 +260,24 @@ export function ToolsManager() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso levantado (kg)</label>
-                  <input
-                    type="number" min="1" step="0.5" value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white"
-                  />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso levantado (kg)</span>
+                    <input
+                      type="number" min="1" step="0.5" value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white"
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps (al fallo)</label>
-                  <input
-                    type="number" min="1" max="30" value={reps}
-                    onChange={(e) => setReps(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white"
-                  />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps (al fallo)</span>
+                    <input
+                      type="number" min="1" max="30" value={reps}
+                      onChange={(e) => setReps(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -285,7 +289,7 @@ export function ToolsManager() {
               )}
 
               {rmResults ? (
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 text-center">
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-center">
                   <p className="text-[10px] font-black uppercase tracking-wider text-primary/80">1RM Estimado (promedio)</p>
                   <p className="text-4xl font-black text-white mt-1">{oneRM} <span className="text-lg text-primary">kg</span></p>
                   <p className="text-[10px] text-light/50 mt-1">Rango: {round(rmResults.min)} – {round(rmResults.max)} kg</p>
@@ -382,14 +386,18 @@ export function ToolsManager() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso objetivo (kg)</label>
-                  <input type="number" min="0" step="0.5" value={targetWeight} onChange={(e) => setTargetWeight(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso objetivo (kg)</span>
+                    <input type="number" min="0" step="0.5" value={targetWeight} onChange={(e) => setTargetWeight(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso de la barra (kg)</label>
-                  <input type="number" min="0" step="0.5" value={barWeight} onChange={(e) => setBarWeight(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso de la barra (kg)</span>
+                    <input type="number" min="0" step="0.5" value={barWeight} onChange={(e) => setBarWeight(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  </label>
                   <div className="flex gap-1.5 mt-1.5">
                     {BAR_PRESETS.map((b) => (
                       <button key={b} onClick={() => setBarWeight(String(b))}
@@ -425,7 +433,7 @@ export function ToolsManager() {
               </div>
 
               {plateResult.valid ? (
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20">
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
                   <p className="text-[10px] font-black uppercase tracking-wider text-primary/80 text-center">Discos por lado</p>
                   <div className="flex flex-wrap justify-center gap-2 mt-3">
                     {plateResult.plates.length === 0 ? (
@@ -547,14 +555,18 @@ export function ToolsManager() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso usado (kg)</label>
-                  <input type="number" min="1" step="0.5" value={rpeWeight} onChange={(e) => setRpeWeight(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Peso usado (kg)</span>
+                    <input type="number" min="1" step="0.5" value={rpeWeight} onChange={(e) => setRpeWeight(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps realizadas</label>
-                  <input type="number" min="1" max="20" value={rpeReps} onChange={(e) => setRpeReps(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  <label className="block">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps realizadas</span>
+                    <input type="number" min="1" max="20" value={rpeReps} onChange={(e) => setRpeReps(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-lg font-bold text-white" />
+                  </label>
                 </div>
               </div>
               <div>
@@ -573,7 +585,7 @@ export function ToolsManager() {
               </div>
 
               {rpeResult && (
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 text-center">
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-center">
                   <p className="text-[10px] font-black uppercase tracking-wider text-primary/80">1RM Estimado (ajustado por RPE)</p>
                   <p className="text-4xl font-black text-white mt-1">{rpeResult.est1rm} <span className="text-lg text-primary">kg</span></p>
                   <p className="text-[10px] text-light/50 mt-1">{rpeResult.effectiveReps} reps máximas posibles · {rpeResult.rir} en reserva</p>

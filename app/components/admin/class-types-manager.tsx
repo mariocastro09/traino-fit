@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle2, XCircle } from "lucide-react";
@@ -73,7 +74,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
             Gestiona los tipos de clases disponibles y su código de color
           </p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold w-full sm:w-auto">
+        <Button onClick={handleOpenAdd} className="bg-primary text-dark transition-all duration-200 font-bold w-full sm:w-auto">
           <Plus size={16} className="mr-1" />
           Nueva Clase
         </Button>
@@ -83,7 +84,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
         {classTypes.map((classType) => (
           <Card 
             key={classType.id} 
-            className={`relative overflow-hidden transition-all duration-300 bg-zinc-900/40 border-white/5 backdrop-blur-md hover:border-white/10 ${
+            className={`relative overflow-hidden transition-all duration-200 bg-zinc-900/40 border-white/5 backdrop-blur-md hover:border-white/10 ${
               !classType.isActive ? 'opacity-50' : ''
             }`}
           >
@@ -137,8 +138,8 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    if (confirm(`¿Eliminar "${classType.name}"?`)) {
+                  onClick={async () => {
+                    if (await confirmDialog(`¿Eliminar "${classType.name}"?`)) {
                       onDelete(classType.id);
                     }
                   }}
@@ -163,24 +164,28 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Nombre *</label>
-              <input
-                type="text"
-                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.name || ''}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ej: CrossFit WOD"
-              />
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Nombre *</span>
+                <input
+                  type="text"
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.name || ''}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Ej: CrossFit WOD"
+                />
+              </label>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Descripción</label>
-              <textarea
-                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.description || ''}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Descripción del tipo de clase"
-                rows={3}
-              />
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Descripción</span>
+                <textarea
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.description || ''}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Descripción del tipo de clase"
+                  rows={3}
+                />
+              </label>
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Color de Identificación</label>
@@ -219,7 +224,7 @@ export function ClassTypesManager({ classTypes, onAdd, onUpdate, onDelete }: Cla
               <Button 
                 onClick={handleSave} 
                 disabled={!form.name?.trim()}
-                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-dark transition-all duration-200 font-bold"
               >
                 {editingId ? 'Actualizar Clase' : 'Crear Clase'}
               </Button>

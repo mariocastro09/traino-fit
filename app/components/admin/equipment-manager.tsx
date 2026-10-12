@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Plus, Trash2, Search, Package, Edit2, X, Check,
@@ -139,7 +140,7 @@ export function EquipmentManager() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`¿Eliminar "${name}"? Los ejercicios que dependan de este equipo no se actualizarán automáticamente.`)) return;
+    if (!(await confirmDialog(`¿Eliminar "${name}"? Los ejercicios que dependan de este equipo no se actualizarán automáticamente.`))) return;
     try {
       const res = await fetch(`/api/admin/equipment/${id}`, {
         method: "DELETE",
@@ -330,61 +331,69 @@ export function EquipmentManager() {
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre del Equipo *</label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.name}
-                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Ej: Barra olímpica 20kg, Kettlebell 24kg..."
-                  autoFocus
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre del Equipo *</span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.name}
+                    onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Ej: Barra olímpica 20kg, Kettlebell 24kg..."
+                    autoFocus
+                  />
+                </label>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Categoría *</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
-                >
-                  {CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
-                  ))}
-                </select>
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Categoría *</span>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Cantidad *</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white text-center"
-                  value={form.quantity}
-                  onChange={(e) => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 0 }))}
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Cantidad *</span>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white text-center"
+                    value={form.quantity}
+                    onChange={(e) => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 0 }))}
+                  />
+                </label>
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Descripción / Notas</label>
-              <textarea
-                className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white resize-none"
-                value={form.description}
-                onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="Ej: Juego completo 10-50kg, requiere ajuste de cables..."
-                rows={2}
-              />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Descripción / Notas</span>
+                <textarea
+                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white resize-none"
+                  value={form.description}
+                  onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Ej: Juego completo 10-50kg, requiere ajuste de cables..."
+                  rows={2}
+                />
+              </label>
             </div>
 
             <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-white/5">
               <button
                 onClick={() => setForm(f => ({ ...f, isAvailable: !f.isAvailable }))}
-                className={`relative w-10 h-5 rounded-full transition-all duration-300 border ${
+                className={`relative w-10 h-5 rounded-full transition-all duration-200 border ${
                   form.isAvailable ? "bg-emerald-500 border-emerald-400" : "bg-zinc-700 border-zinc-600"
                 }`}
               >
-                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${form.isAvailable ? "left-5" : "left-0.5"}`} />
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${form.isAvailable ? "left-5" : "left-0.5"}`} />
               </button>
               <div>
                 <p className="text-xs font-bold text-white">{form.isAvailable ? "Disponible para uso" : "No disponible"}</p>

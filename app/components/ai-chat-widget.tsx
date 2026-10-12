@@ -488,7 +488,7 @@ Por favor:
           <div className="flex flex-col gap-2 pt-1">
             <Button
               onClick={() => completeOnboarding(programType, selectedType, selectedLevel, selectedDuration, selectedMuscle)}
-              className="w-full bg-primary text-dark font-black uppercase tracking-wider text-sm h-12 rounded-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary text-dark font-black uppercase tracking-wider text-sm h-12 rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <Zap size={15} /> Generar {programType === "cycle" ? "Ciclo" : "Rutina"}
             </Button>
@@ -739,7 +739,7 @@ Por favor:
             return (
               <div className="flex gap-2.5 flex-row">
                 <div className="w-6.5 h-6.5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot size={12} className="text-primary animate-pulse" />
+                  <Bot size={12} className="text-primary" />
                 </div>
                 <div className="flex-1 max-w-[85%] space-y-3">
                   {/* Status line */}
@@ -795,13 +795,15 @@ Por favor:
             placeholder="Pregunta sobre rutinas, series, técnica..."
             disabled={loading}
             id="ai-chat-input"
+            aria-label="Mensaje para el coach"
             className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all disabled:opacity-50"
           />
           <button
+            aria-label="Enviar mensaje"
             onClick={() => sendMessage()}
             disabled={loading || !input.trim()}
             id="ai-chat-send-btn"
-            className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-zinc-950 hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 flex-shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-zinc-950 hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 flex-shrink-0 cursor-pointer"
           >
             <Send size={13} className="text-zinc-950 fill-zinc-950" />
           </button>

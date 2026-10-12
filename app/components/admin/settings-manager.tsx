@@ -8,6 +8,7 @@ export function SettingsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [activeTab, setActiveTab] = useState("hero");
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function SettingsManager() {
     e.preventDefault();
     setSaving(true);
     setSaveSuccess(false);
+    setSaveError("");
 
     try {
       const res = await fetch("/api/admin/settings", {
@@ -48,11 +50,11 @@ export function SettingsManager() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        alert("Error al guardar la configuración");
+        setSaveError("No se pudo guardar la configuración. Intenta de nuevo.");
       }
     } catch (err) {
       console.error("Error saving settings:", err);
-      alert("Error de red al guardar la configuración");
+      setSaveError("Error de red al guardar. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -91,6 +93,7 @@ export function SettingsManager() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <span role="alert" className="text-red-400 text-xs font-bold empty:hidden">{saveError}</span>
           {saveSuccess && (
             <span className="text-green-400 text-xs font-bold flex items-center gap-1.5 animate-fade-in">
               <CheckCircle size={14} /> ¡Guardado correctamente!
@@ -99,7 +102,7 @@ export function SettingsManager() {
           <Button 
             type="submit" 
             disabled={saving}
-            className="bg-primary text-dark font-bold hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/15"
+            className="bg-primary text-dark font-bold transition-all duration-200 shadow-lg shadow-primary/15"
           >
             <Save size={16} className="mr-1.5" />
             {saving ? "Guardando..." : "Guardar Cambios"}
@@ -138,33 +141,37 @@ export function SettingsManager() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-white">Hero Principal (General)</CardTitle>
                 <CardDescription className="text-xs text-light/50">
-                  Modifica la fecha/badge superior del Hero y el subtítulo de apertura general.
+                  Anuncio de apertura del Hero. Solo se muestra antes de la fecha de apertura (pestaña Cuenta Regresiva); después el sitio muestra «Ya abrimos».
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                     Badge del Hero (Año/Apertura)
+                  </span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.hero_apertura_badge || ""}
+                      onChange={(e) => handleChange("hero_apertura_badge", e.target.value)}
+                      placeholder="Ej: — Apertura Agosto 2026"
+                    />
                   </label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.hero_apertura_badge || ""}
-                    onChange={(e) => handleChange("hero_apertura_badge", e.target.value)}
-                    placeholder="Ej: — Apertura Agosto 2026"
-                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                     Subtítulo de Apertura (Amarillo)
+                  </span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.hero_apertura_sub || ""}
+                      onChange={(e) => handleChange("hero_apertura_sub", e.target.value)}
+                      placeholder="Ej: Nueva apertura en AGOSTO."
+                    />
                   </label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.hero_apertura_sub || ""}
-                    onChange={(e) => handleChange("hero_apertura_sub", e.target.value)}
-                    placeholder="Ej: Nueva apertura en AGOSTO."
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -177,34 +184,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_gym_tag || ""}
-                      onChange={(e) => handleChange("hero_slide_gym_tag", e.target.value)}
-                      placeholder="Ej: TRAINO GYM"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_gym_tag || ""}
+                        onChange={(e) => handleChange("hero_slide_gym_tag", e.target.value)}
+                        placeholder="Ej: TRAINO GYM"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_gym_focus || ""}
-                      onChange={(e) => handleChange("hero_slide_gym_focus", e.target.value)}
-                      placeholder="Ej: FUERZA"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_gym_focus || ""}
+                        onChange={(e) => handleChange("hero_slide_gym_focus", e.target.value)}
+                        placeholder="Ej: FUERZA"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_gym_tagline || ""}
-                      onChange={(e) => handleChange("hero_slide_gym_tagline", e.target.value)}
-                      placeholder="Ej: Máquinas de última generación..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_gym_tagline || ""}
+                        onChange={(e) => handleChange("hero_slide_gym_tagline", e.target.value)}
+                        placeholder="Ej: Máquinas de última generación..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -216,34 +229,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_box_tag || ""}
-                      onChange={(e) => handleChange("hero_slide_box_tag", e.target.value)}
-                      placeholder="Ej: TRAINO BOX"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_box_tag || ""}
+                        onChange={(e) => handleChange("hero_slide_box_tag", e.target.value)}
+                        placeholder="Ej: TRAINO BOX"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_box_focus || ""}
-                      onChange={(e) => handleChange("hero_slide_box_focus", e.target.value)}
-                      placeholder="Ej: COMUNIDAD"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_box_focus || ""}
+                        onChange={(e) => handleChange("hero_slide_box_focus", e.target.value)}
+                        placeholder="Ej: COMUNIDAD"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_box_tagline || ""}
-                      onChange={(e) => handleChange("hero_slide_box_tagline", e.target.value)}
-                      placeholder="Ej: Coaching de élite, WODs diarios..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_box_tagline || ""}
+                        onChange={(e) => handleChange("hero_slide_box_tagline", e.target.value)}
+                        placeholder="Ej: Coaching de élite, WODs diarios..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -255,34 +274,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_hybrid_tag || ""}
-                      onChange={(e) => handleChange("hero_slide_hybrid_tag", e.target.value)}
-                      placeholder="Ej: TRAINO HYBRID"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tag (Nombre del módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_hybrid_tag || ""}
+                        onChange={(e) => handleChange("hero_slide_hybrid_tag", e.target.value)}
+                        placeholder="Ej: TRAINO HYBRID"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_hybrid_focus || ""}
-                      onChange={(e) => handleChange("hero_slide_hybrid_focus", e.target.value)}
-                      placeholder="Ej: RENDIMIENTO"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Focus (Palabra cambiante)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_hybrid_focus || ""}
+                        onChange={(e) => handleChange("hero_slide_hybrid_focus", e.target.value)}
+                        placeholder="Ej: RENDIMIENTO"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.hero_slide_hybrid_tagline || ""}
-                      onChange={(e) => handleChange("hero_slide_hybrid_tagline", e.target.value)}
-                      placeholder="Ej: Gym + CrossFit. El sistema definitivo..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Tagline / Descripción corta</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.hero_slide_hybrid_tagline || ""}
+                        onChange={(e) => handleChange("hero_slide_hybrid_tagline", e.target.value)}
+                        placeholder="Ej: Gym + CrossFit. El sistema definitivo..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -302,44 +327,50 @@ export function SettingsManager() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                    <label className="block">
+                      <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                       Badge Superior de Precios
+                    </span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_hero_badge || ""}
+                        onChange={(e) => handleChange("pricing_hero_badge", e.target.value)}
+                        placeholder="Ej: Arquitectura de Precios"
+                      />
                     </label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_hero_badge || ""}
-                      onChange={(e) => handleChange("pricing_hero_badge", e.target.value)}
-                      placeholder="Ej: Arquitectura de Precios"
-                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                    <label className="block">
+                      <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                       Título Principal de Precios
+                    </span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_hero_title || ""}
+                        onChange={(e) => handleChange("pricing_hero_title", e.target.value)}
+                        placeholder="Ej: EL PLAN [PERFECTO] PARA TI"
+                      />
                     </label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_hero_title || ""}
-                      onChange={(e) => handleChange("pricing_hero_title", e.target.value)}
-                      placeholder="Ej: EL PLAN [PERFECTO] PARA TI"
-                    />
                     <span className="text-[10px] text-light/40 mt-1 block">
                       Tip: Pon corchetes <code className="text-primary bg-white/5 px-1 py-0.5 rounded">[como esto]</code> alrededor de la palabra que deseas destacar en amarillo.
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                     Subtítulo / Mensaje Secundario
+                  </span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.pricing_hero_subtitle || ""}
+                      onChange={(e) => handleChange("pricing_hero_subtitle", e.target.value)}
+                      placeholder="Ej: Sin cargos ocultos. Sin contratos largos. Solo resultados."
+                    />
                   </label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.pricing_hero_subtitle || ""}
-                    onChange={(e) => handleChange("pricing_hero_subtitle", e.target.value)}
-                    placeholder="Ej: Sin cargos ocultos. Sin contratos largos. Solo resultados."
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -352,34 +383,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_box_tag || ""}
-                      onChange={(e) => handleChange("pricing_module_box_tag", e.target.value)}
-                      placeholder="Ej: Módulo 1"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_box_tag || ""}
+                        onChange={(e) => handleChange("pricing_module_box_tag", e.target.value)}
+                        placeholder="Ej: Módulo 1"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_box_title || ""}
-                      onChange={(e) => handleChange("pricing_module_box_title", e.target.value)}
-                      placeholder="Ej: TRAINO BOX — La Comunidad"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_box_title || ""}
+                        onChange={(e) => handleChange("pricing_module_box_title", e.target.value)}
+                        placeholder="Ej: TRAINO BOX — La Comunidad"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_box_subtitle || ""}
-                      onChange={(e) => handleChange("pricing_module_box_subtitle", e.target.value)}
-                      placeholder="Ej: Coaching, comunidad y WODs de alto rendimiento..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_box_subtitle || ""}
+                        onChange={(e) => handleChange("pricing_module_box_subtitle", e.target.value)}
+                        placeholder="Ej: Coaching, comunidad y WODs de alto rendimiento..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -391,34 +428,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_gym_tag || ""}
-                      onChange={(e) => handleChange("pricing_module_gym_tag", e.target.value)}
-                      placeholder="Ej: Módulo 2"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_gym_tag || ""}
+                        onChange={(e) => handleChange("pricing_module_gym_tag", e.target.value)}
+                        placeholder="Ej: Módulo 2"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_gym_title || ""}
-                      onChange={(e) => handleChange("pricing_module_gym_title", e.target.value)}
-                      placeholder="Ej: TRAINO GYM — La Libertad"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_gym_title || ""}
+                        onChange={(e) => handleChange("pricing_module_gym_title", e.target.value)}
+                        placeholder="Ej: TRAINO GYM — La Libertad"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_gym_subtitle || ""}
-                      onChange={(e) => handleChange("pricing_module_gym_subtitle", e.target.value)}
-                      placeholder="Ej: Autonomía total, fuerza bruta y equipamiento..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_gym_subtitle || ""}
+                        onChange={(e) => handleChange("pricing_module_gym_subtitle", e.target.value)}
+                        placeholder="Ej: Autonomía total, fuerza bruta y equipamiento..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -430,34 +473,40 @@ export function SettingsManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_hybrid_tag || ""}
-                      onChange={(e) => handleChange("pricing_module_hybrid_tag", e.target.value)}
-                      placeholder="Ej: Módulo 3"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Badge (Módulo)</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_hybrid_tag || ""}
+                        onChange={(e) => handleChange("pricing_module_hybrid_tag", e.target.value)}
+                        placeholder="Ej: Módulo 3"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</label>
-                    <input
-                      type="text"
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_hybrid_title || ""}
-                      onChange={(e) => handleChange("pricing_module_hybrid_title", e.target.value)}
-                      placeholder="Ej: TRAINO HYBRID — La Élite"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Título</span>
+                      <input
+                        type="text"
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_hybrid_title || ""}
+                        onChange={(e) => handleChange("pricing_module_hybrid_title", e.target.value)}
+                        placeholder="Ej: TRAINO HYBRID — La Élite"
+                      />
+                    </label>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</label>
-                    <textarea
-                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                      value={settings.pricing_module_hybrid_subtitle || ""}
-                      onChange={(e) => handleChange("pricing_module_hybrid_subtitle", e.target.value)}
-                      placeholder="Ej: Lo mejor de ambos mundos..."
-                      rows={3}
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-light/60 mb-1">Descripción / Subtítulo</span>
+                      <textarea
+                        className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                        value={settings.pricing_module_hybrid_subtitle || ""}
+                        onChange={(e) => handleChange("pricing_module_hybrid_subtitle", e.target.value)}
+                        placeholder="Ej: Lo mejor de ambos mundos..."
+                        rows={3}
+                      />
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -477,31 +526,37 @@ export function SettingsManager() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_box_hook || ""}
-                    onChange={(e) => handleChange("three_pillars_box_hook", e.target.value)}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_box_hook || ""}
+                      onChange={(e) => handleChange("three_pillars_box_hook", e.target.value)}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_box_description || ""}
-                    onChange={(e) => handleChange("three_pillars_box_description", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_box_description || ""}
+                      onChange={(e) => handleChange("three_pillars_box_description", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_box_features || ""}
-                    onChange={(e) => handleChange("three_pillars_box_features", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_box_features || ""}
+                      onChange={(e) => handleChange("three_pillars_box_features", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
               </CardContent>
             </Card>
@@ -516,31 +571,37 @@ export function SettingsManager() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_gym_hook || ""}
-                    onChange={(e) => handleChange("three_pillars_gym_hook", e.target.value)}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_gym_hook || ""}
+                      onChange={(e) => handleChange("three_pillars_gym_hook", e.target.value)}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_gym_description || ""}
-                    onChange={(e) => handleChange("three_pillars_gym_description", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_gym_description || ""}
+                      onChange={(e) => handleChange("three_pillars_gym_description", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_gym_features || ""}
-                    onChange={(e) => handleChange("three_pillars_gym_features", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_gym_features || ""}
+                      onChange={(e) => handleChange("three_pillars_gym_features", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
               </CardContent>
             </Card>
@@ -555,31 +616,37 @@ export function SettingsManager() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</label>
-                  <input
-                    type="text"
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_full_hook || ""}
-                    onChange={(e) => handleChange("three_pillars_full_hook", e.target.value)}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Hook / Subtítulo</span>
+                    <input
+                      type="text"
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_full_hook || ""}
+                      onChange={(e) => handleChange("three_pillars_full_hook", e.target.value)}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_full_description || ""}
-                    onChange={(e) => handleChange("three_pillars_full_description", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Descripción</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_full_description || ""}
+                      onChange={(e) => handleChange("three_pillars_full_description", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</label>
-                  <textarea
-                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                    value={settings.three_pillars_full_features || ""}
-                    onChange={(e) => handleChange("three_pillars_full_features", e.target.value)}
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">Beneficios (separados por coma)</span>
+                    <textarea
+                      className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                      value={settings.three_pillars_full_features || ""}
+                      onChange={(e) => handleChange("three_pillars_full_features", e.target.value)}
+                      rows={3}
+                    />
+                  </label>
                 </div>
               </CardContent>
             </Card>
@@ -591,48 +658,54 @@ export function SettingsManager() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-bold text-white">Cuenta Regresiva (Apertura)</CardTitle>
               <CardDescription className="text-xs text-light/50">
-                Modifica la fecha límite y textos del banner de espera.
+                Fecha de apertura y textos de la lista de espera. Al pasar la fecha, la portada reemplaza la cuenta regresiva por la invitación a la primera clase gratis.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Fecha de Apertura (Formato ISO)
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={settings.waitlist_countdown_target || "2026-08-01T00:00:00-04:00"}
+                    onChange={(e) => handleChange("waitlist_countdown_target", e.target.value)}
+                    placeholder="AAAA-MM-DDT00:00:00-04:00"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={settings.waitlist_countdown_target || "2026-08-01T00:00:00-04:00"}
-                  onChange={(e) => handleChange("waitlist_countdown_target", e.target.value)}
-                  placeholder="AAAA-MM-DDT00:00:00-04:00"
-                />
                 <span className="text-[10px] text-light/40 mt-1 block">
                   Usa el formato estándar ISO. Ej: 2026-08-01T00:00:00-04:00
                 </span>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Título del Countdown
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={settings.waitlist_countdown_title || ""}
+                    onChange={(e) => handleChange("waitlist_countdown_title", e.target.value)}
+                    placeholder="Ej: APERTURA AGOSTO"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={settings.waitlist_countdown_title || ""}
-                  onChange={(e) => handleChange("waitlist_countdown_title", e.target.value)}
-                  placeholder="Ej: APERTURA AGOSTO"
-                />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Texto del Descuento
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={settings.waitlist_discount_text || ""}
+                    onChange={(e) => handleChange("waitlist_discount_text", e.target.value)}
+                    placeholder="Ej: 20% OFF TU PRIMER MES"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={settings.waitlist_discount_text || ""}
-                  onChange={(e) => handleChange("waitlist_discount_text", e.target.value)}
-                  placeholder="Ej: 20% OFF TU PRIMER MES"
-                />
               </div>
             </CardContent>
           </Card>
@@ -650,16 +723,18 @@ export function SettingsManager() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Token de Hugging Face (HF_TOKEN)
+                </span>
+                  <input
+                    type="password"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
+                    value={settings.HF_TOKEN || ""}
+                    onChange={(e) => handleChange("HF_TOKEN", e.target.value)}
+                    placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  />
                 </label>
-                <input
-                  type="password"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
-                  value={settings.HF_TOKEN || ""}
-                  onChange={(e) => handleChange("HF_TOKEN", e.target.value)}
-                  placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                />
                 <p className="text-[10px] text-light/40 mt-1.5 leading-relaxed">
                   Genera un token de acceso en{" "}
                   <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary underline">

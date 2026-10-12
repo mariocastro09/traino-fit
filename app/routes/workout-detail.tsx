@@ -270,7 +270,7 @@ export default function WorkoutDetail() {
         <div className="min-h-dvh flex items-center justify-center bg-zinc-950">
           <div className="text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
-              <Dumbbell className="text-primary animate-pulse" size={24} />
+              <Dumbbell className="text-primary" size={24} />
             </div>
             <p className="text-light/50 text-xs tracking-widest uppercase font-bold">Cargando entrenamiento...</p>
           </div>
@@ -285,7 +285,7 @@ export default function WorkoutDetail() {
         <div className="min-h-dvh flex items-center justify-center px-4 bg-zinc-950">
           <div className="max-w-sm w-full text-center space-y-6 p-8 rounded-3xl border border-white/5 bg-zinc-900/20">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
-              <Flame size={28} className="animate-pulse" />
+              <Flame size={28} />
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-black uppercase text-white">¡Enlace No Disponible!</h2>
@@ -336,8 +336,6 @@ export default function WorkoutDetail() {
 
       <div className="min-h-dvh bg-zinc-950 pb-28 relative overflow-x-hidden">
         {/* Ambient glows */}
-        <div className="fixed top-0 left-0 w-full h-72 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <div className="fixed bottom-0 right-0 w-72 h-72 bg-orange-600/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-8 space-y-5">
 
@@ -349,6 +347,7 @@ export default function WorkoutDetail() {
             </Link>
             <div className="flex items-center gap-2">
               <button
+                aria-label={soundEnabled ? "Silenciar sonido" : "Activar sonido"}
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`p-2 rounded-xl border border-white/5 bg-zinc-900/60 transition-all ${soundEnabled ? "text-primary" : "text-light/30"}`}
               >
@@ -366,7 +365,7 @@ export default function WorkoutDetail() {
 
           {/* Workout header card */}
           <div className="p-5 sm:p-7 rounded-3xl border border-white/8 bg-zinc-950/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-orange-500 to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />
             <div className="absolute top-4 right-4 w-28 h-28 bg-primary/8 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -395,7 +394,7 @@ export default function WorkoutDetail() {
               </div>
               <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${isWorkoutDone ? "bg-emerald-400" : "bg-gradient-to-r from-primary to-orange-500"}`}
+                  className={`h-full rounded-full transition-all duration-200 ${isWorkoutDone ? "bg-emerald-400" : "bg-primary"}`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -405,7 +404,7 @@ export default function WorkoutDetail() {
           {/* Main Chronometer */}
           <div className="p-4 rounded-2xl border border-white/8 bg-zinc-950/60 backdrop-blur-md flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary ${timerRunning ? "animate-pulse" : ""}`}>
+              <div className={`w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary`}>
                 <Timer size={18} />
               </div>
               <div>
@@ -416,7 +415,7 @@ export default function WorkoutDetail() {
             <div className="flex items-center gap-2">
               {!timerRunning ? (
                 <Button onClick={() => { setTimerRunning(true); playBeep(900, 0.08); }}
-                  className="bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs px-4">
+                  className="bg-primary hover:bg-primary-300 text-dark font-bold h-9 text-xs px-4">
                   <Play size={12} className="mr-1.5" /> Iniciar
                 </Button>
               ) : (
@@ -482,7 +481,7 @@ export default function WorkoutDetail() {
                   return (
                     <div
                       key={ex.id}
-                      className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
+                      className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                         isFullyDone
                           ? "bg-emerald-950/20 border-emerald-500/20"
                           : "bg-zinc-950/60 border-white/6 hover:border-white/10"
@@ -552,7 +551,7 @@ export default function WorkoutDetail() {
                                   <button
                                     key={sIdx}
                                     onClick={() => handleToggleSet(ex, sIdx)}
-                                    className={`py-3 rounded-xl text-xs font-bold border transition-all duration-300 flex flex-col items-center gap-1 active:scale-95 ${
+                                    className={`py-3 rounded-xl text-xs font-bold border transition-all duration-200 flex flex-col items-center gap-1 active:scale-95 ${
                                       isChecked
                                         ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]"
                                         : "bg-zinc-900 border-white/8 text-light/60 hover:text-white hover:border-white/20 hover:bg-zinc-800"
@@ -579,7 +578,7 @@ export default function WorkoutDetail() {
           </div>
 
           {/* Motivation footer */}
-          <div className={`p-6 rounded-3xl border text-center space-y-2 transition-all duration-500 ${
+          <div className={`p-6 rounded-3xl border text-center space-y-2 transition-all duration-200 ${
             isWorkoutDone
               ? "border-emerald-500/30 bg-emerald-950/20"
               : "border-dashed border-white/10 bg-zinc-900/10"

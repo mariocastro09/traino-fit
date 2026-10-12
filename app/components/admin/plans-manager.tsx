@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle2, XCircle, Star, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
@@ -152,7 +153,7 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
                   {modulePlans.map((plan, idx) => (
                     <Card
                       key={plan.id}
-                      className={`relative overflow-hidden transition-all duration-300 ${
+                      className={`relative overflow-hidden transition-all duration-200 ${
                         !plan.isActive ? "opacity-50" : ""
                       } ${plan.featured ? "border-primary/40 bg-primary/5" : ""}`}
                     >
@@ -253,8 +254,8 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              if (confirm(`¿Eliminar "${plan.name}"?`)) {
+                            onClick={async () => {
+                              if (await confirmDialog(`¿Eliminar "${plan.name}"?`)) {
                                 onDelete(plan.id);
                               }
                             }}
@@ -285,97 +286,111 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
           <div className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Nombre *
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.name || ""}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Ej: STARTER"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.name || ""}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ej: STARTER"
-                />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Módulo / Grupo *
+                </span>
+                  <select
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.moduleName || "TRAINO BOX"}
+                    onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
+                  >
+                    <option value="TRAINO BOX">TRAINO BOX</option>
+                    <option value="TRAINO GYM">TRAINO GYM</option>
+                    <option value="TRAINO HYBRID">TRAINO HYBRID</option>
+                  </select>
                 </label>
-                <select
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.moduleName || "TRAINO BOX"}
-                  onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
-                >
-                  <option value="TRAINO BOX">TRAINO BOX</option>
-                  <option value="TRAINO GYM">TRAINO GYM</option>
-                  <option value="TRAINO HYBRID">TRAINO HYBRID</option>
-                </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Hook / Subtítulo
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.hook || ""}
+                    onChange={(e) => setForm({ ...form, hook: e.target.value })}
+                    placeholder="Ej: Crea el Hábito"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.hook || ""}
-                  onChange={(e) => setForm({ ...form, hook: e.target.value })}
-                  placeholder="Ej: Crea el Hábito"
-                />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                   Precio *
+                </span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.price || ""}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    placeholder="Ej: $29.990"
+                  />
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.price || ""}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  placeholder="Ej: $29.990"
-                />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                 Descripción / Horario
+              </span>
+                <input
+                  type="text"
+                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.description || ""}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Ej: 2 Clases / semana + Coaching"
+                />
               </label>
-              <input
-                type="text"
-                className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.description || ""}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Ej: 2 Clases / semana + Coaching"
-              />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                 Beneficios (separados por coma) *
+              </span>
+                <textarea
+                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.features || ""}
+                  onChange={(e) => setForm({ ...form, features: e.target.value })}
+                  placeholder="Ej: 2 clases por semana,Coaching certificado,Escalable a tu nivel"
+                  rows={3}
+                />
               </label>
-              <textarea
-                className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.features || ""}
-                onChange={(e) => setForm({ ...form, features: e.target.value })}
-                placeholder="Ej: 2 clases por semana,Coaching certificado,Escalable a tu nivel"
-                rows={3}
-              />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
                 Texto Botón CTA *
+              </span>
+                <input
+                  type="text"
+                  className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.cta || "Empieza aquí"}
+                  onChange={(e) => setForm({ ...form, cta: e.target.value })}
+                  placeholder="Ej: Empieza aquí"
+                />
               </label>
-              <input
-                type="text"
-                className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.cta || "Empieza aquí"}
-                onChange={(e) => setForm({ ...form, cta: e.target.value })}
-                placeholder="Ej: Empieza aquí"
-              />
             </div>
 
             <div className="flex gap-6 pt-2">
@@ -413,7 +428,7 @@ export function PlansManager({ plans, onAdd, onUpdate, onDelete }: PlansManagerP
               <Button
                 onClick={handleSave}
                 disabled={!form.name?.trim() || !form.price?.trim() || !form.features?.trim() || !form.cta?.trim()}
-                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-dark transition-all duration-200 font-bold"
               >
                 {editingId ? "Actualizar Plan" : "Crear Plan"}
               </Button>

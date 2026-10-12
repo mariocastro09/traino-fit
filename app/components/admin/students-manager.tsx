@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle2, XCircle, Search, Mail, Phone, User } from "lucide-react";
@@ -117,7 +118,7 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={handleOpenAdd} className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold py-2.5">
+          <Button onClick={handleOpenAdd} className="bg-primary text-dark transition-all duration-200 font-bold py-2.5">
             <Plus size={16} className="mr-1" />
             Nuevo Alumno
           </Button>
@@ -133,7 +134,7 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
           filteredStudents.map((student) => (
             <Card 
               key={student.id} 
-              className={`transition-all duration-300 bg-zinc-900/30 border-white/5 hover:border-white/10 backdrop-blur-md ${
+              className={`transition-all duration-200 bg-zinc-900/30 border-white/5 hover:border-white/10 backdrop-blur-md ${
                 !student.isActive ? 'opacity-50' : ''
               }`}
             >
@@ -218,8 +219,9 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        if (confirm(`¿Eliminar a ${student.firstName} ${student.lastName}?`)) {
+                      aria-label={`Eliminar a ${student.firstName} ${student.lastName}`}
+                      onClick={async () => {
+                        if (await confirmDialog(`¿Eliminar a ${student.firstName} ${student.lastName}?`)) {
                           onDelete(student.id);
                         }
                       }}
@@ -247,47 +249,55 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
             {/* Required Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Nombre *</label>
-                <input
-                  type="text"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.firstName || ''}
-                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  placeholder="Juan"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Nombre *</span>
+                  <input
+                    type="text"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.firstName || ''}
+                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    placeholder="Juan"
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Apellido *</label>
-                <input
-                  type="text"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.lastName || ''}
-                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                  placeholder="Pérez"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Apellido *</span>
+                  <input
+                    type="text"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.lastName || ''}
+                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                    placeholder="Pérez"
+                  />
+                </label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Email *</label>
-                <input
-                  type="email"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.email || ''}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="juan@example.com"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Email *</span>
+                  <input
+                    type="email"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.email || ''}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="juan@example.com"
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Teléfono *</label>
-                <input
-                  type="tel"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.phone || ''}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+56 9 1234 5678"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Teléfono *</span>
+                  <input
+                    type="tel"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.phone || ''}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="+56 9 1234 5678"
+                  />
+                </label>
               </div>
             </div>
 
@@ -304,111 +314,129 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha de Nacimiento</label>
-              <input
-                type="date"
-                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.dateOfBirth || ''}
-                onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-              />
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha de Nacimiento</span>
+                <input
+                  type="date"
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.dateOfBirth || ''}
+                  onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+                />
+              </label>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Contacto de Emergencia</label>
-                <input
-                  type="text"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.emergencyContact || ''}
-                  onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
-                  placeholder="Nombre"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Contacto de Emergencia</span>
+                  <input
+                    type="text"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.emergencyContact || ''}
+                    onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
+                    placeholder="Nombre"
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Teléfono de Emergencia</label>
-                <input
-                  type="tel"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.emergencyPhone || ''}
-                  onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })}
-                  placeholder="+56 9 8765 4321"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Teléfono de Emergencia</span>
+                  <input
+                    type="tel"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.emergencyPhone || ''}
+                    onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })}
+                    placeholder="+56 9 8765 4321"
+                  />
+                </label>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Condiciones Médicas</label>
-              <textarea
-                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.medicalConditions || ''}
-                onChange={(e) => setForm({ ...form, medicalConditions: e.target.value })}
-                placeholder="Alergias, lesiones, etc."
-                rows={2}
-              />
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Condiciones Médicas</span>
+                <textarea
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.medicalConditions || ''}
+                  onChange={(e) => setForm({ ...form, medicalConditions: e.target.value })}
+                  placeholder="Alergias, lesiones, etc."
+                  rows={2}
+                />
+              </label>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Plan Asociado</label>
-                <select
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.planId || ''}
-                  onChange={(e) => setForm({ ...form, planId: e.target.value ? parseInt(e.target.value) : undefined })}
-                >
-                  <option value="">Ninguno</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.moduleName}) - {p.price}
-                    </option>
-                  ))}
-                </select>
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Plan Asociado</span>
+                  <select
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.planId || ''}
+                    onChange={(e) => setForm({ ...form, planId: e.target.value ? parseInt(e.target.value) : undefined })}
+                  >
+                    <option value="">Ninguno</option>
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.moduleName}) - {p.price}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Tipo Membresía</label>
-                <select
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.membershipType || ''}
-                  onChange={(e) => setForm({ ...form, membershipType: e.target.value })}
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="Mensual">Mensual</option>
-                  <option value="Trimestral">Trimestral</option>
-                  <option value="Semestral">Semestral</option>
-                  <option value="Anual">Anual</option>
-                  <option value="Clase Única">Clase Única</option>
-                </select>
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Tipo Membresía</span>
+                  <select
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.membershipType || ''}
+                    onChange={(e) => setForm({ ...form, membershipType: e.target.value })}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="Mensual">Mensual</option>
+                    <option value="Trimestral">Trimestral</option>
+                    <option value="Semestral">Semestral</option>
+                    <option value="Anual">Anual</option>
+                    <option value="Clase Única">Clase Única</option>
+                  </select>
+                </label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha Inicio</label>
-                <input
-                  type="date"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.membershipStartDate || ''}
-                  onChange={(e) => setForm({ ...form, membershipStartDate: e.target.value })}
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha Inicio</span>
+                  <input
+                    type="date"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.membershipStartDate || ''}
+                    onChange={(e) => setForm({ ...form, membershipStartDate: e.target.value })}
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha Vencimiento</label>
-                <input
-                  type="date"
-                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                  value={form.membershipEndDate || ''}
-                  onChange={(e) => setForm({ ...form, membershipEndDate: e.target.value })}
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Fecha Vencimiento</span>
+                  <input
+                    type="date"
+                    className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                    value={form.membershipEndDate || ''}
+                    onChange={(e) => setForm({ ...form, membershipEndDate: e.target.value })}
+                  />
+                </label>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Notas Internas</label>
-              <textarea
-                className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
-                value={form.notes || ''}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Notas adicionales..."
-                rows={2}
-              />
+              <label className="block">
+                <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-2">Notas Internas</span>
+                <textarea
+                  className="w-full p-3 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white"
+                  value={form.notes || ''}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Notas adicionales..."
+                  rows={2}
+                />
+              </label>
             </div>
 
             <div className="flex items-center gap-2 pt-2">
@@ -431,7 +459,7 @@ export function StudentsManager({ students, plans, onAdd, onUpdate, onDelete }: 
               <Button
                 onClick={handleSave}
                 disabled={!form.firstName?.trim() || !form.lastName?.trim() || !form.email?.trim() || !form.phone?.trim()}
-                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold"
+                className="bg-primary text-dark transition-all duration-200 font-bold"
               >
                 {editingId ? 'Actualizar Alumno' : 'Crear Alumno'}
               </Button>

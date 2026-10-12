@@ -53,7 +53,13 @@ const MARQUEE_WORDS = [
 
 const INTERVAL_MS = 5500;
 
-export function Hero({ settings }: { settings: Record<string, string> }) {
+export function Hero({
+  settings,
+  isOpen,
+}: {
+  settings: Record<string, string>;
+  isOpen: boolean;
+}) {
   const ref = useRef<HTMLElement>(null);
   const [slide, setSlide] = useState(0);
   const [hovered, setHovered] = useState(false);
@@ -86,8 +92,9 @@ export function Hero({ settings }: { settings: Record<string, string> }) {
     return () => clearTimeout(id);
   }, [paused, slide]);
 
-  const aperturaBadge = settings.hero_apertura_badge ?? "";
-  const aperturaSub = settings.hero_apertura_sub ?? "";
+  // The pre-opening announcement copy stops applying once the gym is open.
+  const aperturaBadge = isOpen ? "— Ya abrimos" : settings.hero_apertura_badge ?? "";
+  const aperturaSub = isOpen ? "Tu primera clase es gratis." : settings.hero_apertura_sub ?? "";
 
   return (
     <section
@@ -280,7 +287,7 @@ export function Hero({ settings }: { settings: Record<string, string> }) {
               id="hero-cta-primary"
               className="group w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 bg-primary text-dark font-black text-sm uppercase tracking-widest leading-tight hover:bg-primary-300 active:scale-[0.98] transition-[background-color,scale] duration-200 flex items-center justify-center gap-2"
             >
-              RESERVAR MI CUPÓN DE APERTURA
+              {isOpen ? "RESERVAR MI CLASE GRATIS" : "RESERVAR MI CUPÓN DE APERTURA"}
               <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-200" aria-hidden />
             </Link>
 

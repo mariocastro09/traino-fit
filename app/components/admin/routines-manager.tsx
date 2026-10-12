@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Plus, Edit, Trash2, Search, Dumbbell, ShieldAlert, Clock, Layers,
@@ -269,6 +270,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
   const [activeTab, setActiveTab] = useState<"library" | "builder">("library");
 
   const [showDialog, setShowDialog] = useState(false);
+  const [formError, setFormError] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Routine>>({});
 
@@ -302,26 +304,27 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
   const handleOpenAdd = () => {
     setEditingId(null);
     setForm({ difficulty: "Intermedio", sets: 3, reps: "10", section: "Principal" });
-    setShowDialog(true);
+    setFormError(""); setShowDialog(true);
   };
 
   const handleOpenAddForRoutine = (routineName: string, difficulty: string) => {
     setEditingId(null);
     setForm({ routineName, difficulty, sets: 3, reps: "10", section: "Principal" });
-    setShowDialog(true);
+    setFormError(""); setShowDialog(true);
   };
 
   const handleOpenEdit = (routine: Routine) => {
     setEditingId(routine.id);
     setForm(routine);
-    setShowDialog(true);
+    setFormError(""); setShowDialog(true);
   };
 
   const handleSave = async () => {
     if (!form.routineName?.trim() || !form.exerciseName?.trim() || !form.sets || !form.reps || !form.difficulty) {
-      alert("Por favor completa todos los campos obligatorios.");
+      setFormError("Completa todos los campos obligatorios.");
       return;
     }
+    setFormError("");
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId ? `/api/admin/routines/${editingId}` : `/api/admin/routines`;
@@ -344,7 +347,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`¿Eliminar el ejercicio "${name}"?`)) return;
+    if (!(await confirmDialog(`¿Eliminar el ejercicio "${name}"?`))) return;
     try {
       const response = await fetch(`/api/admin/routines/${id}`, { method: "DELETE", credentials: "include" });
       if (response.ok) {
@@ -425,7 +428,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
   return (
     <div className="flex flex-col h-[680px] rounded-2xl border border-white/8 bg-zinc-950/80 overflow-hidden backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-zinc-900 to-zinc-950 border-b border-white/8 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
             <Dumbbell size={16} />
@@ -436,7 +439,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
           </div>
         </div>
         {activeTab === "library" && (
-          <Button onClick={handleOpenAdd} size="sm" className="bg-primary text-dark hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8">
+          <Button onClick={handleOpenAdd} size="sm" className="bg-primary text-dark transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8">
             <Plus size={14} className="mr-1" /> Nueva
           </Button>
         )}
@@ -617,7 +620,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
               <Button
                 onClick={handleBuilderSave}
                 disabled={builderSaving}
-                className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all"
+                className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 transition-all"
               >
                 {builderSaving ? "Guardando..." : "💾 Guardar en Biblioteca"}
               </Button>
@@ -633,7 +636,7 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
                   </div>
                   <div className="h-0.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-primary transition-all duration-300 rounded-full"
+                      className="h-full bg-primary transition-all duration-200 rounded-full"
                       style={{ width: `${(["goal","level","muscle","name"].indexOf(builderStep) + 1) / 4 * 100}%` }}
                     />
                   </div>
@@ -718,21 +721,23 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
                     <p className="text-xs text-white">{builderGoal?.emoji} {builderGoal?.label} · {builderLevel} · {BUILDER_MUSCLES.find(m => m.id === builderMuscle)?.emoji} {BUILDER_MUSCLES.find(m => m.id === builderMuscle)?.label}</p>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">Nombre de la rutina *</label>
-                    <input
-                      type="text"
-                      autoFocus
-                      value={builderName}
-                      onChange={(e) => setBuilderName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter" && builderName.trim()) handleBuilderPreview(); }}
-                      placeholder="Ej: Fuerza de Piernas · Martes"
-                      className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white placeholder-zinc-500"
-                    />
+                    <label className="block">
+                      <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-1.5">Nombre de la rutina *</span>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={builderName}
+                        onChange={(e) => setBuilderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && builderName.trim()) handleBuilderPreview(); }}
+                        placeholder="Ej: Fuerza de Piernas · Martes"
+                        className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white placeholder-zinc-500"
+                      />
+                    </label>
                   </div>
                   <Button
                     onClick={handleBuilderPreview}
                     disabled={!builderName.trim()}
-                    className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 hover:scale-[1.01] transition-all disabled:opacity-40"
+                    className="w-full bg-primary text-dark font-bold uppercase tracking-wider text-xs h-10 transition-all disabled:opacity-40"
                   >
                     <Zap size={13} className="mr-1.5" /> Generar Rutina
                   </Button>
@@ -752,59 +757,78 @@ export function RoutinesManager({ onRefreshTrigger = 0, onRoutinesUpdated }: Rou
           <div className="space-y-3 pt-2 max-h-[70vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Nombre de la Rutina *</label>
-                <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.routineName || ""} onChange={(e) => setForm({ ...form, routineName: e.target.value })} placeholder="Ej: Fuerza de Piernas" />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Nombre de la Rutina *</span>
+                  <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.routineName || ""} onChange={(e) => setForm({ ...form, routineName: e.target.value })} placeholder="Ej: Fuerza de Piernas" />
+                </label>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Sección</label>
-                <select value={form.section || ""} onChange={(e) => setForm({ ...form, section: e.target.value })} className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white">
-                  <option value="">Sin sección</option>
-                  <option value="Calentamiento">Calentamiento</option>
-                  <option value="Principal">Principal</option>
-                  <option value="Finalizador">Finalizador</option>
-                  <option value="Skill/Fuerza">Skill/Fuerza</option>
-                  <option value="WOD">WOD</option>
-                  <option value="Cooldown">Cooldown</option>
-                </select>
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Sección</span>
+                  <select value={form.section || ""} onChange={(e) => setForm({ ...form, section: e.target.value })} className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white">
+                    <option value="">Sin sección</option>
+                    <option value="Calentamiento">Calentamiento</option>
+                    <option value="Principal">Principal</option>
+                    <option value="Finalizador">Finalizador</option>
+                    <option value="Skill/Fuerza">Skill/Fuerza</option>
+                    <option value="WOD">WOD</option>
+                    <option value="Cooldown">Cooldown</option>
+                  </select>
+                </label>
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Nombre del Ejercicio *</label>
-              <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.exerciseName || ""} onChange={(e) => setForm({ ...form, exerciseName: e.target.value })} placeholder="Ej: Peso Muerto (Deadlift)" />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Nombre del Ejercicio *</span>
+                <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.exerciseName || ""} onChange={(e) => setForm({ ...form, exerciseName: e.target.value })} placeholder="Ej: Peso Muerto (Deadlift)" />
+              </label>
             </div>
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Series *</label>
-                <input type="number" min="1" max="20" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.sets || ""} onChange={(e) => setForm({ ...form, sets: parseInt(e.target.value) || 0 })} placeholder="3" />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Series *</span>
+                  <input type="number" min="1" max="20" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.sets || ""} onChange={(e) => setForm({ ...form, sets: parseInt(e.target.value) || 0 })} placeholder="3" />
+                </label>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps *</label>
-                <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.reps || ""} onChange={(e) => setForm({ ...form, reps: e.target.value })} placeholder="8-10" />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Reps *</span>
+                  <input type="text" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.reps || ""} onChange={(e) => setForm({ ...form, reps: e.target.value })} placeholder="8-10" />
+                </label>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">% RM</label>
-                <input type="number" min="0" max="120" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.intensityPct || ""} onChange={(e) => setForm({ ...form, intensityPct: parseInt(e.target.value) || undefined })} placeholder="75" />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">% RM</span>
+                  <input type="number" min="0" max="120" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.intensityPct || ""} onChange={(e) => setForm({ ...form, intensityPct: parseInt(e.target.value) || undefined })} placeholder="75" />
+                </label>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Desc. (s)</label>
-                <input type="number" min="0" max="600" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={(form as any).restSeconds || ""} onChange={(e) => setForm({ ...form, restSeconds: parseInt(e.target.value) || undefined } as any)} placeholder="90" />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Desc. (s)</span>
+                  <input type="number" min="0" max="600" className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={(form as any).restSeconds || ""} onChange={(e) => setForm({ ...form, restSeconds: parseInt(e.target.value) || undefined } as any)} placeholder="90" />
+                </label>
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Dificultad *</label>
-              <select value={form.difficulty || "Intermedio"} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white">
-                <option value="Principiante">Principiante</option>
-                <option value="Intermedio">Intermedio</option>
-                <option value="Avanzado">Avanzado</option>
-              </select>
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Dificultad *</span>
+                <select value={form.difficulty || "Intermedio"} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white">
+                  <option value="Principiante">Principiante</option>
+                  <option value="Intermedio">Intermedio</option>
+                  <option value="Avanzado">Avanzado</option>
+                </select>
+              </label>
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Técnica / Descripción</label>
-              <textarea className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Cue técnico principal + consideración de seguridad" rows={3} />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1.5">Técnica / Descripción</span>
+                <textarea className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Cue técnico principal + consideración de seguridad" rows={3} />
+              </label>
             </div>
+            <p role="alert" className="text-red-400 text-xs font-bold text-right empty:hidden">{formError}</p>
             <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
               <Button variant="outline" size="sm" onClick={() => setShowDialog(false)}>Cancelar</Button>
-              <Button onClick={handleSave} className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold text-xs">{editingId ? "Actualizar" : "Registrar"}</Button>
+              <Button onClick={handleSave} className="bg-primary text-dark transition-all duration-200 font-bold text-xs">{editingId ? "Actualizar" : "Registrar"}</Button>
             </div>
           </div>
         </DialogContent>

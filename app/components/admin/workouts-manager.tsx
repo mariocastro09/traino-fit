@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { confirmDialog } from "~/components/ui/confirm-dialog";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { 
@@ -62,6 +63,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
 
   // Dialog & Form State
   const [showDialog, setShowDialog] = useState(false);
+  const [formError, setFormError] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -115,7 +117,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
     setExercises([
       { routineName: "Calentamiento", exerciseName: "", sets: 3, reps: "10", restSeconds: 60, difficulty: "Intermedio" }
     ]);
-    setShowDialog(true);
+    setFormError(""); setShowDialog(true);
   };
 
   const handleOpenEdit = (workout: Workout) => {
@@ -124,7 +126,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
     setDescription(workout.description || "");
     setDifficulty(workout.difficulty);
     setExercises(workout.exercises.map(e => ({ ...e })));
-    setShowDialog(true);
+    setFormError(""); setShowDialog(true);
   };
 
   const handleAddExerciseRow = () => {
@@ -170,19 +172,20 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert("Por favor escribe un nombre para el entrenamiento.");
+      setFormError("Escribe un nombre para el entrenamiento.");
       return;
     }
     if (exercises.length === 0) {
-      alert("Por favor añade al menos un ejercicio.");
+      setFormError("Añade al menos un ejercicio.");
       return;
     }
     // Validate rows
     const invalidRow = exercises.some(e => !e.routineName.trim() || !e.exerciseName.trim() || !e.sets || !e.reps);
     if (invalidRow) {
-      alert("Por favor completa los campos de sección, ejercicio, series y repeticiones.");
+      setFormError("Completa los campos de sección, ejercicio, series y repeticiones.");
       return;
     }
+    setFormError("");
 
     try {
       const method = editingId ? "PUT" : "POST";
@@ -206,16 +209,16 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
         if (onWorkoutsUpdated) onWorkoutsUpdated();
       } else {
         const data = await res.json() as { error?: string };
-        alert(`Error al guardar: ${data.error || "desconocido"}`);
+        setFormError(`Error al guardar: ${data.error || "desconocido"}`);
       }
     } catch (error) {
       console.error("Failed to save workout:", error);
-      alert("Error de conexión.");
+      setFormError("Error de conexión. Intenta de nuevo.");
     }
   };
 
   const handleDelete = async (id: number, workoutName: string) => {
-    if (!confirm(`¿Eliminar el entrenamiento "${workoutName}"? Todos los enlaces compartidos dejarán de funcionar.`)) return;
+    if (!(await confirmDialog(`¿Eliminar el entrenamiento "${workoutName}"? Todos los enlaces compartidos dejarán de funcionar.`))) return;
 
     try {
       const res = await fetch(`/api/admin/workouts/${id}`, {
@@ -285,7 +288,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
   return (
     <div className="flex flex-col h-[600px] rounded-2xl border border-white/8 bg-zinc-950/80 overflow-hidden backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-zinc-900 to-zinc-950 border-b border-white/8 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
             <Sparkles size={16} />
@@ -298,7 +301,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
         <Button 
           onClick={handleOpenAdd} 
           size="sm" 
-          className="bg-primary text-dark hover:scale-105 transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8"
+          className="bg-primary text-dark transition-all duration-200 text-xs font-bold px-3 py-1.5 h-8"
         >
           <Plus size={14} className="mr-1" />
           <span>Crear Workout</span>
@@ -476,38 +479,44 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
             {/* Form details */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre del Workout *</label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej: Lunes - Fuerza de Squat + Metcon"
-                />
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Nombre del Workout *</span>
+                  <input
+                    type="text"
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ej: Lunes - Fuerza de Squat + Metcon"
+                  />
+                </label>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Dificultad *</label>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
-                >
-                  <option value="Principiante">Principiante</option>
-                  <option value="Intermedio">Intermedio</option>
-                  <option value="Avanzado">Avanzado</option>
-                </select>
+                <label className="block">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Dificultad *</span>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                  >
+                    <option value="Principiante">Principiante</option>
+                    <option value="Intermedio">Intermedio</option>
+                    <option value="Avanzado">Avanzado</option>
+                  </select>
+                </label>
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Instrucciones / Notas generales</label>
-              <textarea
-                className="w-full p-2 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ej: Calentar bien hombros. El Metcon es de alta intensidad, ritmo constante."
-                rows={2}
-              />
+              <label className="block">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-light/60 mb-1">Instrucciones / Notas generales</span>
+                <textarea
+                  className="w-full p-2 rounded-lg bg-zinc-900 border border-white/10 focus:border-primary outline-none text-xs text-white"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ej: Calentar bien hombros. El Metcon es de alta intensidad, ritmo constante."
+                  rows={2}
+                />
+              </label>
             </div>
 
             {/* Base de Rutinas search templates panel */}
@@ -543,7 +552,7 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
                             handleAddTemplateToExercises(tpl);
                             setTemplateSearch("");
                           }}
-                          className="px-2 py-0.5 rounded bg-primary text-dark font-bold hover:scale-105 active:scale-95 transition-all text-[9px]"
+                          className="px-2 py-0.5 rounded bg-primary text-dark font-bold active:scale-95 transition-all text-[9px]"
                         >
                           Añadir
                         </button>
@@ -694,13 +703,14 @@ export function WorkoutsManager({ onWorkoutsUpdated, refreshTrigger = 0 }: Worko
               </div>
             </div>
 
+            <p role="alert" className="text-red-400 text-xs font-bold text-right empty:hidden">{formError}</p>
             <div className="flex gap-2 justify-end pt-3 border-t border-white/5">
               <Button variant="outline" size="sm" onClick={() => setShowDialog(false)}>
                 Cancelar
               </Button>
               <Button 
                 onClick={handleSave} 
-                className="bg-primary text-dark hover:scale-105 transition-all duration-300 font-bold text-xs"
+                className="bg-primary text-dark transition-all duration-200 font-bold text-xs"
               >
                 {editingId ? "Actualizar Workout" : "Crear Workout"}
               </Button>
