@@ -6,7 +6,7 @@ import type { AppLoadContext } from '../load-context';
 // Public read queries, shared by the /api/* handlers and the page loaders.
 
 // Settings rows that must never reach the browser of a non-admin visitor.
-const SECRET_SETTING_KEYS = new Set(['HF_TOKEN']);
+const SECRET_SETTING_KEYS = new Set(['HF_TOKEN', 'GEMINI_API_KEY']);
 
 // The D1 binding, from a React Router loader's `context`.
 export const d1 = (context: unknown) => (context as AppLoadContext).cloudflare.env.DB;

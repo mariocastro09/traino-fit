@@ -831,12 +831,12 @@ app.post('/api/admin/routines/generate', requireAdmin, async (c) => {
   try {
     const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
-    const [stored, equipment] = await Promise.all([
-      db.select().from(schema.settings).where(eq(schema.settings.key, 'HF_TOKEN')).get(),
+    const [settings, equipment] = await Promise.all([
+      getAllSettings(c.env.DB),
       db.select().from(schema.equipment).all(),
     ]);
     const inventory = equipment.filter((e) => e.isAvailable).map((e) => `${e.name} (x${e.quantity})`);
-    const result = await generateRoutine(c.env as any, stored?.value || undefined, inventory, body);
+    const result = await generateRoutine(c.env as any, { gemini: settings.GEMINI_API_KEY, hf: settings.HF_TOKEN }, inventory, body);
     return c.json(result, 'error' in result ? 502 : 200);
   } catch (err: any) {
     console.error('Error in /api/admin/routines/generate:', err);

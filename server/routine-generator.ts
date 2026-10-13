@@ -5,9 +5,27 @@
 
 import { PURPOSES, SECTIONS, type PurposeId } from '../app/lib/routines';
 
-// Tried in order on the Hugging Face router; the first usable answer wins.
-const HF_MODELS = ['openai/gpt-oss-120b', 'meta-llama/Llama-3.3-70B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'];
-const CF_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+// Chat-completions providers, tried in order; within one, the first usable answer wins.
+// Gemini comes first: its free tier is generous and it follows the JSON format reliably.
+const PROVIDERS = [
+  {
+    key: 'gemini',
+    label: 'Gemini',
+    setting: 'GEMINI_API_KEY',
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    models: ['gemini-flash-latest', 'gemini-2.5-flash'],
+    // Low reasoning effort keeps the answer from being cut short by thinking tokens
+    extra: { response_format: { type: 'json_object' }, reasoning_effort: 'low', max_tokens: 12000 },
+  },
+  {
+    key: 'hf',
+    label: 'Hugging Face',
+    setting: 'HF_TOKEN',
+    url: 'https://router.huggingface.co/v1/chat/completions',
+    models: ['openai/gpt-oss-120b', 'meta-llama/Llama-3.3-70B-Instruct'],
+    extra: { max_tokens: 6000 },
+  },
+] as const;
 
 const SYSTEM =
   'Eres el head coach de TrainoFit, un gimnasio y box de CrossFit en Puente Alto, Chile. ' +
@@ -106,7 +124,12 @@ export function buildPrompt(body: any, inventory: string[]) {
 export function normalizeRoutine(answer: string, candidateIds: Set<string>): GeneratedRoutine | null {
   let raw: any;
   try {
-    raw = JSON.parse(answer.slice(answer.indexOf('{'), answer.lastIndexOf('}') + 1));
+    raw = JSON.parse(
+      answer
+        .slice(answer.indexOf('{'), answer.lastIndexOf('}') + 1)
+        // Models often put real line breaks inside strings (the article), which JSON forbids
+        .replace(/"(?:[^"\\]|\\.)*"/g, (str) => str.replace(/\r?\n/g, '\\n').replace(/\t/g, ' '))
+    );
   } catch {
     return null;
   }
@@ -138,8 +161,10 @@ export function normalizeRoutine(answer: string, candidateIds: Set<string>): Gen
   };
 }
 
-async function askHuggingFace(token: string, model: string, prompt: string) {
-  const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
+type Provider = (typeof PROVIDERS)[number];
+
+async function ask(provider: Provider, token: string, model: string, prompt: string) {
+  const response = await fetch(provider.url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -148,23 +173,27 @@ async function askHuggingFace(token: string, model: string, prompt: string) {
         { role: 'system', content: SYSTEM },
         { role: 'user', content: prompt },
       ],
-      max_tokens: 6000,
       temperature: 0.6,
+      ...provider.extra,
     }),
     signal: AbortSignal.timeout(45000),
   });
-  if (!response.ok) throw new Error(`${model}: HTTP ${response.status} ${(await response.text()).slice(0, 200)}`);
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${(await response.text()).replace(/\s+/g, ' ').slice(0, 200)}`);
   const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
   return data.choices?.[0]?.message?.content ?? '';
 }
 
+// How an unusable answer ended, so a cut-off or off-format reply can be told apart
+const tail = (answer: string) => `respuesta sin rutina válida (termina en "${answer.trim().slice(-60)}")`;
+
 /**
  * Generates a routine. Returns the reason for each failed attempt when no
  * model produced a usable answer, so the admin can see what to fix.
+ * `keys` are the API keys saved in Configuración; env vars win over them.
  */
 export async function generateRoutine(
-  env: { HF_TOKEN?: string; HUGGINGFACE_TOKEN?: string; AI?: any },
-  storedToken: string | undefined,
+  env: { GEMINI_API_KEY?: string; HF_TOKEN?: string; HUGGINGFACE_TOKEN?: string },
+  keys: { gemini?: string; hf?: string },
   inventory: string[],
   body: any
 ): Promise<{ routine: GeneratedRoutine; source: string } | { error: string }> {
@@ -172,45 +201,32 @@ export async function generateRoutine(
   const ids = new Set<string>((Array.isArray(body.candidates) ? body.candidates : []).map((c: Candidate) => c.id));
   const failures: string[] = [];
 
-  const token = env.HF_TOKEN || env.HUGGINGFACE_TOKEN || storedToken;
-  if (!token) failures.push('Falta el token de Hugging Face (Configuración → HF_TOKEN)');
-  for (const model of token ? HF_MODELS : []) {
-    try {
-      const routine = normalizeRoutine(await askHuggingFace(token!, model, prompt), ids);
-      if (routine) return { routine, source: model };
-      failures.push(`${model}: respuesta sin rutina válida`);
-    } catch (error) {
-      // A rejected token fails the same way on every model
-      if (/HTTP 40[13]/.test((error as Error).message)) {
-        failures.push('Hugging Face rechazó el token: revísalo en Configuración → HF_TOKEN');
-        break;
+  for (const provider of PROVIDERS) {
+    const token =
+      provider.key === 'gemini' ? env.GEMINI_API_KEY || keys.gemini : env.HF_TOKEN || env.HUGGINGFACE_TOKEN || keys.hf;
+    if (!token) continue;
+    for (const model of provider.models) {
+      try {
+        const answer = await ask(provider, token, model, prompt);
+        const routine = normalizeRoutine(answer, ids);
+        if (routine) return { routine, source: model };
+        failures.push(`${model}: ${tail(answer)}`);
+      } catch (error) {
+        const message = (error as Error).message;
+        // A rejected key or an exhausted quota fails the same way on every model
+        if (/HTTP 40[13]|API key not valid|API_KEY_INVALID/.test(message)) {
+          failures.push(`${provider.label} rechazó la clave: revísala en Configuración → IA de rutinas`);
+          break;
+        }
+        if (/HTTP 402/.test(message)) {
+          failures.push(`${provider.label}: la cuenta no tiene créditos gratuitos disponibles`);
+          break;
+        }
+        failures.push(`${model}: ${message}`);
       }
-      failures.push((error as Error).message);
     }
   }
-
-  if (env.AI) {
-    try {
-      // The binding has no timeout of its own and can hang when the service is unreachable
-      const result = await Promise.race([
-        env.AI.run(CF_MODEL, {
-          messages: [
-            { role: 'system', content: SYSTEM },
-            { role: 'user', content: prompt },
-          ],
-          max_tokens: 4000,
-          temperature: 0.6,
-        }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('sin respuesta en 40 s')), 40000)),
-      ]);
-      const answer = typeof result?.response === 'string' ? result.response : JSON.stringify(result?.response ?? '');
-      const routine = normalizeRoutine(answer, ids);
-      if (routine) return { routine, source: CF_MODEL };
-      failures.push('Workers AI: respuesta sin rutina válida');
-    } catch (error) {
-      failures.push(`Workers AI: ${(error as Error).message}`);
-    }
-  }
+  if (!env.GEMINI_API_KEY && !keys.gemini) failures.push('Falta la clave de Gemini (Configuración → IA de rutinas)');
 
   console.error('Routine generation failed:', failures);
   return { error: failures.join(' · ') };

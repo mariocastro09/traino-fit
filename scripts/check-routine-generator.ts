@@ -50,6 +50,9 @@ assert.deepEqual(routine.sections[0].exercises.map((e) => [e.libraryId, e.sets, 
   [candidates[0].id, 12, "5", 120],
   [null, 3, "10", 30],
 ]);
+// Real line breaks inside a string (models write the article that way) are repaired
+const multiline = normalizeRoutine('{"article":"Uno.\n\nDos \\"bien\\".",\n"sections":[{"name":"A","exercises":[{"nombre":"Burpees"}]}]}', ids)!;
+assert.equal(multiline.article, 'Uno.\n\nDos "bien".');
 assert.equal(normalizeRoutine("no puedo ayudarte", ids), null);
 assert.equal(normalizeRoutine('{"sections":[]}', ids), null);
 

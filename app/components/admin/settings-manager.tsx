@@ -715,44 +715,52 @@ export function SettingsManager() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                 <Bot size={18} className="text-primary" />
-                Coach Virtual — Hugging Face API
+                IA de rutinas
               </CardTitle>
               <CardDescription className="text-xs text-light/50">
-                Activa el Coach Virtual con IA real. Sin token, el bot usa respuestas pregrabadas de la base de datos de rutinas igualmente.
+                La IA arma las rutinas en Rutinas → Nueva rutina. Sin clave, o si la IA falla, se usa una base armada con la biblioteca de ejercicios.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <label className="block">
                   <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
-                  Token de Hugging Face (HF_TOKEN)
-                </span>
+                    Clave de Google Gemini (recomendada)
+                  </span>
                   <input
                     type="password"
+                    autoComplete="off"
+                    className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
+                    value={settings.GEMINI_API_KEY || ""}
+                    onChange={(e) => handleChange("GEMINI_API_KEY", e.target.value)}
+                    placeholder="AIza..."
+                  />
+                </label>
+                <p className="text-[11px] text-light/50 mt-1.5 leading-relaxed">
+                  Gratis y sin tarjeta: créala en{" "}
+                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    aistudio.google.com/apikey
+                  </a>
+                  , pégala aquí y guarda.
+                </p>
+              </div>
+              <div>
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-light/60 mb-1">
+                    Token de Hugging Face (opcional)
+                  </span>
+                  <input
+                    type="password"
+                    autoComplete="off"
                     className="w-full p-2.5 rounded bg-zinc-900 border border-white/10 focus:border-primary outline-none text-sm text-white font-mono"
                     value={settings.HF_TOKEN || ""}
                     onChange={(e) => handleChange("HF_TOKEN", e.target.value)}
-                    placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    placeholder="hf_..."
                   />
                 </label>
-                <p className="text-[10px] text-light/40 mt-1.5 leading-relaxed">
-                  Genera un token de acceso en{" "}
-                  <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                    huggingface.co/settings/tokens
-                  </a>
-                  {" "}(tipo <strong className="text-white">Read</strong>). El modelo usado es{" "}
-                  <code className="text-primary bg-white/5 px-1 py-0.5 rounded">Qwen/Qwen2.5-7B-Instruct</code>{" "}(acceso gratuito en la capa serverless).
+                <p className="text-[11px] text-light/50 mt-1.5 leading-relaxed">
+                  Respaldo si Gemini falla. La cuenta gratuita de Hugging Face trae muy pocos créditos al mes.
                 </p>
-              </div>
-
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-2">
-                <p className="text-xs font-black uppercase tracking-wider text-primary">¿Cómo funciona?</p>
-                <ul className="text-[11px] text-gray-400 space-y-1.5">
-                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> El Coach lee todas las rutinas de la base de datos en tiempo real.</li>
-                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Con token activo, responde con Qwen2.5-7B (7B parámetros, contexto completo).</li>
-                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Sin token, usa el motor de reglas local con las rutinas de la DB igualmente.</li>
-                  <li className="flex items-start gap-1.5"><span className="text-primary mt-0.5">▸</span> Quotas gratuitas de Hugging Face Serverless: ~1,000 req/mes.</li>
-                </ul>
               </div>
             </CardContent>
           </Card>
